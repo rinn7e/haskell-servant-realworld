@@ -137,16 +137,13 @@ listFeedSQL currentUserId lim off = do
     )
 
 -- | Subquery to filter article IDs by tags, author, and favorites
-filterArticlesIdsSQL
+applyArticleFilters
   :: Maybe Text
   -> Maybe Text
   -> Maybe Text
-  -> Int
-  -> Int
-  -> SqlQuery (SqlExpr (Value ArticleId))
-filterArticlesIdsSQL mTag mAuthor mFavorited lim off = do
-  article <- from $ table @Article
-
+  -> SqlExpr (Entity Article)
+  -> SqlQuery ()
+applyArticleFilters mTag mAuthor mFavorited article = do
   for_ mAuthor \authName -> do
     author <- from $ table @User
     where_ (article ^. ArticleAuthorId ==. author ^. UserId)
@@ -168,10 +165,47 @@ filterArticlesIdsSQL mTag mAuthor mFavorited lim off = do
     where_ (fav ^. FavoriteArticleId ==. article ^. ArticleId)
     where_ (uFav ^. UserUsername ==. val favName)
 
+-- | Subquery to filter article IDs by tags, author, and favorites
+filterArticlesIdsSQL
+  :: Maybe Text
+  -> Maybe Text
+  -> Maybe Text
+  -> Int
+  -> Int
+  -> SqlQuery (SqlExpr (Value ArticleId))
+filterArticlesIdsSQL mTag mAuthor mFavorited lim off = do
+  article <- from $ table @Article
+  applyArticleFilters mTag mAuthor mFavorited article
   orderBy [desc (article ^. ArticleCreatedAt)]
   when (lim > 0) $ limit (fromIntegral lim)
   when (off > 0) $ offset (fromIntegral off)
   return (article ^. ArticleId)
+
+countArticles :: (MonadUnliftIO m) => Maybe Text -> Maybe Text -> Maybe Text -> SqlPersistT m Int
+countArticles mTag mAuthor mFavorited = do
+  res <- select $ do
+    article <- from $ table @Article
+    applyArticleFilters mTag mAuthor mFavorited article
+    return countRows
+  return $ maybe 0 unValue (headMay res)
+ where
+  headMay (x : _) = Just x
+  headMay [] = Nothing
+
+countFeed :: (MonadUnliftIO m) => UserId -> SqlPersistT m Int
+countFeed currentUserId = do
+  res <- select $ do
+    ((article :& author) :& follow) <-
+      from $
+        table @Article
+          `innerJoin` table @User `on` (\(art :& auth) -> art ^. ArticleAuthorId ==. auth ^. UserId)
+          `innerJoin` table @Follow `on` (\(_ :& auth :& f) -> f ^. FollowFollowedId ==. auth ^. UserId)
+    where_ (follow ^. FollowFollowerId ==. val currentUserId)
+    return countRows
+  return $ maybe 0 unValue (headMay res)
+ where
+  headMay (x : _) = Just x
+  headMay [] = Nothing
 
 -- | Subquery to fetch article IDs from followed authors for the feed
 feedArticlesIdsSQL

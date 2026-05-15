@@ -6,7 +6,7 @@ import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time (getCurrentTime)
-import Database.Persist (delete, deleteBy, get, insert, insertBy, replace)
+import Database.Persist (delete, deleteBy, deleteWhere, get, insert, insertBy, replace, (==.))
 import Database.Persist.Sql (Entity (..), SqlPersistT, fromSqlKey, runSqlPool, toSqlKey)
 import Effectful (liftIO)
 import Effectful.Error.Static (throwError)
@@ -89,8 +89,9 @@ getFeedHandler (S.Authenticated uid) mLimit mOffset = do
   let limit = maybe 20 id mLimit
   let offset = maybe 0 id mOffset
   groupedArticles <- runDB (listFeed uid limit offset)
+  totalCount <- runDB (countFeed uid)
   let articles = map toArticleResponse $ Map.elems $ unAppendMap groupedArticles
-  return $ ArticleListResponse articles (length articles)
+  return $ ArticleListResponse articles totalCount
 getFeedHandler _ _ _ = throwError S.err401
 
 getArticlesHandler :: S.AuthResult UserId -> Maybe Text -> Maybe Text -> Maybe Text -> Maybe Int -> Maybe Int -> App ArticleListResponse
@@ -101,8 +102,9 @@ getArticlesHandler auth mTag mAuthor mFavorited mLimit mOffset = do
         S.Authenticated uid -> Just uid
         _ -> Nothing
   groupedArticles <- runDB (listArticles mUid mTag mAuthor mFavorited limit offset)
+  totalCount <- runDB (countArticles mTag mAuthor mFavorited)
   let articles = map toArticleResponse $ Map.elems $ unAppendMap groupedArticles
-  return $ ArticleListResponse articles (length articles)
+  return $ ArticleListResponse articles totalCount
 
 createArticleHandler :: S.AuthResult UserId -> NewArticleRequest -> App ArticleResponse
 createArticleHandler (S.Authenticated uid) (NewArticleRequest title desc body mTags) = do
@@ -176,7 +178,11 @@ deleteArticleHandler (S.Authenticated uid) slug = do
       if art.authorId /= uid
         then throwError S.err403
         else do
-          runDB (delete aid)
+          runDB $ do
+            deleteWhere [DB.ArticleTagArticleId ==. aid]
+            deleteWhere [DB.CommentArticleId ==. aid]
+            deleteWhere [DB.FavoriteArticleId ==. aid]
+            delete aid
           return S.NoContent
 deleteArticleHandler _ _ = throwError S.err401
 

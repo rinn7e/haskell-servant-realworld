@@ -1,22 +1,23 @@
+{-# LANGUAGE TypeApplications #-}
+
 module DB.Article.Query where
 
 import Control.Monad (when)
 import Data.Foldable (for_)
-import Data.Map.Append (AppendMap (..))
+import Data.Map.Append (unAppendMap)
 import Data.Map.Strict qualified as Map
-import Data.Ord (Down (..))
-import Data.Semigroup (First (..))
 import Data.Text (Text)
-import Data.Time (UTCTime)
 import Database.Esqueleto.Experimental
 import UnliftIO (MonadUnliftIO)
 
 import DB.Article.Type
+import DB.Follow.Query (isFollowing)
 import DB.Schema.Type
 
 getArticleBySlug :: (MonadUnliftIO m) => Text -> SqlPersistT m (Maybe (Entity Article))
 getArticleBySlug slug = selectOne $ getArticleBySlugSQL slug
 
+-- | Fetch a single article entity by its slug
 getArticleBySlugSQL :: Text -> SqlQuery (SqlExpr (Entity Article))
 getArticleBySlugSQL slug = do
   article <- from $ table @Article
@@ -31,6 +32,7 @@ getArticleWithAuthor mCurrentUserId slug = do
   headMay (x : _) = Just x
   headMay [] = Nothing
 
+-- | Main query to fetch an article with its author, tags, and metadata
 getArticleWithAuthorSQL
   :: Maybe UserId
   -> Text -> SqlQuery ArticleExpr
@@ -43,26 +45,18 @@ getArticleWithAuthorSQL mCurrentUserId slug = do
         `leftJoin` table @Tag `on` (\(_ :& _ :& at :& t) -> at ?. ArticleTagTagId ==. t ?. TagId)
   where_ (article ^. ArticleSlug ==. val slug)
 
-  let favCount = subSelect $ do
-        fav <- from $ table @Favorite
-        where_ (fav ^. FavoriteArticleId ==. article ^. ArticleId)
-        pure countRows
-
-  let isFav = case mCurrentUserId of
-        Just uid -> exists $ do
-          fav <- from $ table @Favorite
-          where_ (fav ^. FavoriteArticleId ==. article ^. ArticleId)
-          where_ (fav ^. FavoriteUserId ==. val uid)
+  return
+    ( article
+    , author
+    , tag
+    , countFavoritesExpr (article ^. ArticleId)
+    , case mCurrentUserId of
+        Just uid -> isFavoritedByExpr (article ^. ArticleId) (val uid)
         Nothing -> val False
-
-  let isFol = case mCurrentUserId of
-        Just uid -> exists $ do
-          fol <- from $ table @Follow
-          where_ (fol ^. FollowFollowedId ==. author ^. UserId)
-          where_ (fol ^. FollowFollowerId ==. val uid)
+    , case mCurrentUserId of
+        Just uid -> isFollowingUserExpr (author ^. UserId) (val uid)
         Nothing -> val False
-
-  return (article, author, tag, favCount, isFav, isFol)
+    )
 
 listArticles
   :: Maybe UserId
@@ -71,11 +65,12 @@ listArticles
   -> Maybe Text
   -> Int
   -> Int
-  -> SqlPersistT IO [(ArticleGrouped)]
+  -> SqlPersistT IO [ArticleGrouped]
 listArticles mCurrentUserId mTag mAuthor mFavorited lim off = do
   result <- select $ listArticlesSQL mCurrentUserId mTag mAuthor mFavorited lim off
   return $ Map.elems $ unAppendMap $ mconcat $ map mkArticleGrouped result
 
+-- | Main query to list articles with filtering and pagination
 listArticlesSQL
   :: Maybe UserId
   -> Maybe Text
@@ -84,35 +79,6 @@ listArticlesSQL
   -> Int
   -> Int -> SqlQuery ArticleExpr
 listArticlesSQL mCurrentUserId mTag mAuthor mFavorited lim off = do
-  -- Subquery for filtered and paginated article IDs
-  let articleIdsQuery = do
-        article <- from $ table @Article
-        author <- from $ table @User
-        where_ (article ^. ArticleAuthorId ==. author ^. UserId)
-
-        for_ mTag \tag -> where_ $ exists $ do
-          (at :& t) <-
-            from $
-              table @ArticleTag
-                `innerJoin` table @Tag `on` (\(at :& t) -> at ^. ArticleTagTagId ==. t ^. TagId)
-          where_ (at ^. ArticleTagArticleId ==. article ^. ArticleId)
-          where_ (t ^. TagName ==. val tag)
-
-        for_ mAuthor \authName -> where_ (author ^. UserUsername ==. val authName)
-
-        for_ mFavorited \favName -> where_ $ exists $ do
-          (fav :& uFav) <-
-            from $
-              table @Favorite
-                `innerJoin` table @User `on` (\(fav :& u) -> fav ^. FavoriteUserId ==. u ^. UserId)
-          where_ (fav ^. FavoriteArticleId ==. article ^. ArticleId)
-          where_ (uFav ^. UserUsername ==. val favName)
-
-        orderBy [desc (article ^. ArticleCreatedAt)]
-        when (lim > 0) $ limit (fromIntegral lim)
-        when (off > 0) $ offset (fromIntegral off)
-        return (article ^. ArticleId)
-
   (((article :& author) :& articleTag) :& tag) <-
     from $
       table @Article
@@ -120,52 +86,32 @@ listArticlesSQL mCurrentUserId mTag mAuthor mFavorited lim off = do
         `leftJoin` table @ArticleTag `on` (\(art :& _ :& at) -> just (art ^. ArticleId) ==. at ?. ArticleTagArticleId)
         `leftJoin` table @Tag `on` (\(_ :& _ :& at :& t) -> at ?. ArticleTagTagId ==. t ?. TagId)
 
-  where_ (article ^. ArticleId `in_` subList_select articleIdsQuery)
+  where_ (article ^. ArticleId `in_` subList_select (filterArticlesIdsSQL mTag mAuthor mFavorited lim off))
 
-  let favCount = subSelect $ do
-        fav <- from $ table @Favorite
-        where_ (fav ^. FavoriteArticleId ==. article ^. ArticleId)
-        pure countRows
-
-  let isFav = case mCurrentUserId of
-        Just uid -> exists $ do
-          fav <- from $ table @Favorite
-          where_ (fav ^. FavoriteArticleId ==. article ^. ArticleId)
-          where_ (fav ^. FavoriteUserId ==. val uid)
+  return
+    ( article
+    , author
+    , tag
+    , countFavoritesExpr (article ^. ArticleId)
+    , case mCurrentUserId of
+        Just uid -> isFavoritedByExpr (article ^. ArticleId) (val uid)
         Nothing -> val False
-
-  let isFol = case mCurrentUserId of
-        Just uid -> exists $ do
-          fol <- from $ table @Follow
-          where_ (fol ^. FollowFollowedId ==. author ^. UserId)
-          where_ (fol ^. FollowFollowerId ==. val uid)
+    , case mCurrentUserId of
+        Just uid -> isFollowingUserExpr (author ^. UserId) (val uid)
         Nothing -> val False
-
-  return (article, author, tag, favCount, isFav, isFol)
+    )
 
 listFeed :: (MonadUnliftIO m) => UserId -> Int -> Int -> SqlPersistT m [ArticleGrouped]
 listFeed currentUserId lim off = do
   result <- select $ listFeedSQL currentUserId lim off
   return $ Map.elems $ unAppendMap $ mconcat $ map mkArticleGrouped result
 
+-- | Main query to fetch the article feed for a user
 listFeedSQL
   :: UserId
   -> Int
   -> Int -> SqlQuery ArticleExpr
 listFeedSQL currentUserId lim off = do
-  -- Subquery for filtered and paginated article IDs
-  let articleIdsQuery = do
-        ((article :& author) :& follow) <-
-          from $
-            table @Article
-              `innerJoin` table @User `on` (\(art :& auth) -> art ^. ArticleAuthorId ==. auth ^. UserId)
-              `innerJoin` table @Follow `on` (\(_ :& auth :& f) -> f ^. FollowFollowedId ==. auth ^. UserId)
-        where_ (follow ^. FollowFollowerId ==. val currentUserId)
-        orderBy [desc (article ^. ArticleCreatedAt)]
-        when (lim > 0) $ limit (fromIntegral lim)
-        when (off > 0) $ offset (fromIntegral off)
-        return (article ^. ArticleId)
-
   (((article :& author) :& articleTag) :& tag) <-
     from $
       table @Article
@@ -173,28 +119,96 @@ listFeedSQL currentUserId lim off = do
         `leftJoin` table @ArticleTag `on` (\(art :& _ :& at) -> just (art ^. ArticleId) ==. at ?. ArticleTagArticleId)
         `leftJoin` table @Tag `on` (\(_ :& _ :& at :& t) -> at ?. ArticleTagTagId ==. t ?. TagId)
 
-  where_ (article ^. ArticleId `in_` subList_select articleIdsQuery)
+  where_ (article ^. ArticleId `in_` subList_select (feedArticlesIdsSQL currentUserId lim off))
 
-  let favCount = subSelect $ do
-        fav <- from $ table @Favorite
-        where_ (fav ^. FavoriteArticleId ==. article ^. ArticleId)
-        pure countRows
+  return
+    ( article
+    , author
+    , tag
+    , countFavoritesExpr (article ^. ArticleId)
+    , isFavoritedByExpr (article ^. ArticleId) (val currentUserId)
+    , isFollowingUserExpr (author ^. UserId) (val currentUserId)
+    )
 
-  let isFav = exists $ do
-        fav <- from $ table @Favorite
-        where_ (fav ^. FavoriteArticleId ==. article ^. ArticleId)
-        where_ (fav ^. FavoriteUserId ==. val currentUserId)
+-- | Subquery to filter article IDs by tags, author, and favorites
+filterArticlesIdsSQL
+  :: Maybe Text
+  -> Maybe Text
+  -> Maybe Text
+  -> Int
+  -> Int
+  -> SqlQuery (SqlExpr (Value ArticleId))
+filterArticlesIdsSQL mTag mAuthor mFavorited lim off = do
+  article <- from $ table @Article
+  author <- from $ table @User
+  where_ (article ^. ArticleAuthorId ==. author ^. UserId)
 
-  let isFol = exists $ do
-        fol <- from $ table @Follow
-        where_ (fol ^. FollowFollowedId ==. author ^. UserId)
-        where_ (fol ^. FollowFollowerId ==. val currentUserId)
+  for_ mTag \tag -> where_ $ exists $ do
+    (at :& t) <-
+      from $
+        table @ArticleTag
+          `innerJoin` table @Tag `on` (\(at :& t) -> at ^. ArticleTagTagId ==. t ^. TagId)
+    where_ (at ^. ArticleTagArticleId ==. article ^. ArticleId)
+    where_ (t ^. TagName ==. val tag)
 
-  return (article, author, tag, favCount, isFav, isFol)
+  for_ mAuthor \authName -> where_ (author ^. UserUsername ==. val authName)
+
+  for_ mFavorited \favName -> where_ $ exists $ do
+    (fav :& uFav) <-
+      from $
+        table @Favorite
+          `innerJoin` table @User `on` (\(fav :& u) -> fav ^. FavoriteUserId ==. u ^. UserId)
+    where_ (fav ^. FavoriteArticleId ==. article ^. ArticleId)
+    where_ (uFav ^. UserUsername ==. val favName)
+
+  orderBy [desc (article ^. ArticleCreatedAt)]
+  when (lim > 0) $ limit (fromIntegral lim)
+  when (off > 0) $ offset (fromIntegral off)
+  return (article ^. ArticleId)
+
+-- | Subquery to fetch article IDs from followed authors for the feed
+feedArticlesIdsSQL
+  :: UserId
+  -> Int
+  -> Int
+  -> SqlQuery (SqlExpr (Value ArticleId))
+feedArticlesIdsSQL currentUserId lim off = do
+  ((article :& author) :& follow) <-
+    from $
+      table @Article
+        `innerJoin` table @User `on` (\(art :& auth) -> art ^. ArticleAuthorId ==. auth ^. UserId)
+        `innerJoin` table @Follow `on` (\(_ :& auth :& f) -> f ^. FollowFollowedId ==. auth ^. UserId)
+  where_ (follow ^. FollowFollowerId ==. val currentUserId)
+  orderBy [desc (article ^. ArticleCreatedAt)]
+  when (lim > 0) $ limit (fromIntegral lim)
+  when (off > 0) $ offset (fromIntegral off)
+  return (article ^. ArticleId)
+
+-- | Expression to count favorites for an article
+countFavoritesExpr :: SqlExpr (Value ArticleId) -> SqlExpr (Value (Maybe Int))
+countFavoritesExpr aid = subSelect $ do
+  fav <- from $ table @Favorite
+  where_ (fav ^. FavoriteArticleId ==. aid)
+  pure countRows
+
+-- | Expression to check if a user has favorited an article
+isFavoritedByExpr :: SqlExpr (Value ArticleId) -> SqlExpr (Value UserId) -> SqlExpr (Value Bool)
+isFavoritedByExpr aid uid = exists $ do
+  fav <- from $ table @Favorite
+  where_ (fav ^. FavoriteArticleId ==. aid)
+  where_ (fav ^. FavoriteUserId ==. uid)
+
+-- | Expression to check if a follower is following an author
+isFollowingUserExpr :: SqlExpr (Value UserId) -> SqlExpr (Value UserId) -> SqlExpr (Value Bool)
+isFollowingUserExpr authorId followerId = exists $ do
+  fol <- from $ table @Follow
+  where_ (fol ^. FollowFollowedId ==. authorId)
+  where_ (fol ^. FollowFollowerId ==. followerId)
 
 getArticleTags :: (MonadUnliftIO m) => ArticleId -> SqlPersistT m [Text]
 getArticleTags aid = map unValue <$> select (getArticleTagsSQL aid)
 
+-- | Query to fetch all tag names for a specific article
 getArticleTagsSQL :: ArticleId -> SqlQuery (SqlExpr (Value Text))
 getArticleTagsSQL aid = do
   (at :& t) <-
@@ -203,25 +217,3 @@ getArticleTagsSQL aid = do
         `innerJoin` table @Tag `on` (\(at :& t) -> at ^. ArticleTagTagId ==. t ^. TagId)
   where_ (at ^. ArticleTagArticleId ==. val aid)
   return (t ^. TagName)
-
-isArticleFavorited :: (MonadUnliftIO m) => ArticleId -> UserId -> SqlPersistT m Bool
-isArticleFavorited aid uid = maybe False (const True) <$> selectOne (isArticleFavoritedSQL aid uid)
-
-isArticleFavoritedSQL :: ArticleId -> UserId -> SqlQuery (SqlExpr (Value FavoriteId))
-isArticleFavoritedSQL aid uid = do
-  fav <- from $ table @Favorite
-  where_ (fav ^. FavoriteArticleId ==. val aid)
-  where_ (fav ^. FavoriteUserId ==. val uid)
-  return (fav ^. FavoriteId)
-
-getFavoritesCount :: (MonadUnliftIO m) => ArticleId -> SqlPersistT m Int
-getFavoritesCount aid = maybe 0 unValue . headMay <$> select (getFavoritesCountSQL aid)
- where
-  headMay (x : _) = Just x
-  headMay [] = Nothing
-
-getFavoritesCountSQL :: ArticleId -> SqlQuery (SqlExpr (Value Int))
-getFavoritesCountSQL aid = do
-  fav <- from $ table @Favorite
-  where_ (fav ^. FavoriteArticleId ==. val aid)
-  return countRows

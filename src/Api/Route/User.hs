@@ -11,7 +11,7 @@ import Servant (GenericMode (type (:-)), Get, JSON, NamedRoutes, Put, ReqBody, (
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Type (UpdateUserRequest (..), UserResponse (..))
+import Api.Type (UpdateUserRequest (..), User (..), UserResponse (..))
 import Common.Type.App (App, AppEnv (..))
 import Common.Util.Auth (generateToken)
 import DB.Schema.Type (UserId)
@@ -41,7 +41,7 @@ getCurrentUserHandler (S.Authenticated uid) = do
     Nothing -> throwError S.err401
     Just u -> do
       token <- liftIO $ generateToken jwtKey uid
-      return $ UserResponse u.email token u.username u.bio u.image
+      return $ UserResponse $ User u.email token u.username u.bio u.image
 getCurrentUserHandler _ = throwError S.err401
 
 updateCurrentUserHandler :: S.AuthResult UserId -> UpdateUserRequest -> App UserResponse
@@ -66,5 +66,5 @@ updateCurrentUserHandler (S.Authenticated uid) (UpdateUserRequest mEmail mUserna
 
       runDB (replace uid newUser)
       token <- liftIO $ generateToken jwtKey uid
-      return $ UserResponse newUser.email token newUser.username newUser.bio newUser.image
+      return $ UserResponse $ User newUser.email token newUser.username newUser.bio newUser.image
 updateCurrentUserHandler _ _ = throwError S.err401

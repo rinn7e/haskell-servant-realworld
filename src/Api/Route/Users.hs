@@ -11,7 +11,7 @@ import Servant (GenericMode (type (:-)), JSON, NamedRoutes, Post, PostCreated, R
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Type (LoginUserRequest (..), NewUserRequest (..), UserResponse (..))
+import Api.Type (LoginUserRequest (..), NewUserRequest (..), User (..), UserResponse (..))
 import Common.Type.App (App, AppEnv (..))
 import Common.Util.Auth (generateToken)
 import DB.User.Query (getUserByEmail)
@@ -44,7 +44,7 @@ loginHandler _ (LoginUserRequest email pwd) = do
       case checkPassword (mkPassword pwd) (PasswordHash u.password) of
         PasswordCheckSuccess -> do
           token <- liftIO $ generateToken jwtKey uid
-          return $ UserResponse u.email token u.username u.bio u.image
+          return $ UserResponse $ User u.email token u.username u.bio u.image
         PasswordCheckFail -> throwError S.err401{S.errBody = "Invalid email or password"}
 
 registerHandler :: S.AuthResult UserId -> NewUserRequest -> App UserResponse
@@ -53,4 +53,4 @@ registerHandler _ (NewUserRequest username email pwd) = do
   hashedPwd <- liftIO $ hashPassword (mkPassword pwd)
   uid <- runDB $ insert $ DB.User username email (unPasswordHash hashedPwd) Nothing Nothing
   token <- liftIO $ generateToken jwtKey uid
-  return $ UserResponse email token username Nothing Nothing
+  return $ UserResponse $ User email token username Nothing Nothing

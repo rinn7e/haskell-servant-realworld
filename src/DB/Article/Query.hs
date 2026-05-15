@@ -4,10 +4,13 @@ module DB.Article.Query where
 
 import Control.Monad (when)
 import Data.Foldable (for_)
-import Data.Map.Append (unAppendMap)
+import Data.Map.Append (AppendMap (..), unAppendMap)
 import Data.Map.Strict qualified as Map
+import Data.Ord (Down)
 import Data.Text (Text)
+import Data.Time (UTCTime)
 import Database.Esqueleto.Experimental
+import Debug.Trace (traceM)
 import UnliftIO (MonadUnliftIO)
 
 import DB.Article.Type
@@ -27,6 +30,7 @@ getArticleBySlugSQL slug = do
 getArticleWithAuthor :: (MonadUnliftIO m) => Maybe UserId -> Text -> SqlPersistT m (Maybe ArticleGrouped)
 getArticleWithAuthor mCurrentUserId slug = do
   result <- select $ getArticleWithAuthorSQL mCurrentUserId slug
+  traceM $ "getArticleWithAuthor result length: " ++ show (length result)
   return $ headMay $ Map.elems $ unAppendMap $ mconcat $ map mkArticleGrouped result
  where
   headMay (x : _) = Just x
@@ -65,10 +69,11 @@ listArticles
   -> Maybe Text
   -> Int
   -> Int
-  -> SqlPersistT IO [ArticleGrouped]
+  -> SqlPersistT IO (AppendMap (Down UTCTime, ArticleId) ArticleGrouped)
 listArticles mCurrentUserId mTag mAuthor mFavorited lim off = do
   result <- select $ listArticlesSQL mCurrentUserId mTag mAuthor mFavorited lim off
-  return $ Map.elems $ unAppendMap $ mconcat $ map mkArticleGrouped result
+  let result2 = mconcat $ map mkArticleGrouped result
+  pure result2
 
 -- | Main query to list articles with filtering and pagination
 listArticlesSQL
@@ -101,10 +106,11 @@ listArticlesSQL mCurrentUserId mTag mAuthor mFavorited lim off = do
         Nothing -> val False
     )
 
-listFeed :: (MonadUnliftIO m) => UserId -> Int -> Int -> SqlPersistT m [ArticleGrouped]
+listFeed :: (MonadUnliftIO m) => UserId -> Int -> Int -> SqlPersistT m (AppendMap (Down UTCTime, ArticleId) ArticleGrouped)
 listFeed currentUserId lim off = do
   result <- select $ listFeedSQL currentUserId lim off
-  return $ Map.elems $ unAppendMap $ mconcat $ map mkArticleGrouped result
+  traceM $ "listFeed result length: " ++ show (length result)
+  return $ mconcat $ map mkArticleGrouped result
 
 -- | Main query to fetch the article feed for a user
 listFeedSQL
@@ -140,8 +146,11 @@ filterArticlesIdsSQL
   -> SqlQuery (SqlExpr (Value ArticleId))
 filterArticlesIdsSQL mTag mAuthor mFavorited lim off = do
   article <- from $ table @Article
-  author <- from $ table @User
-  where_ (article ^. ArticleAuthorId ==. author ^. UserId)
+
+  for_ mAuthor \authName -> do
+    author <- from $ table @User
+    where_ (article ^. ArticleAuthorId ==. author ^. UserId)
+    where_ (author ^. UserUsername ==. val authName)
 
   for_ mTag \tag -> where_ $ exists $ do
     (at :& t) <-
@@ -150,8 +159,6 @@ filterArticlesIdsSQL mTag mAuthor mFavorited lim off = do
           `innerJoin` table @Tag `on` (\(at :& t) -> at ^. ArticleTagTagId ==. t ^. TagId)
     where_ (at ^. ArticleTagArticleId ==. article ^. ArticleId)
     where_ (t ^. TagName ==. val tag)
-
-  for_ mAuthor \authName -> where_ (author ^. UserUsername ==. val authName)
 
   for_ mFavorited \favName -> where_ $ exists $ do
     (fav :& uFav) <-

@@ -11,7 +11,7 @@ import Servant (Capture, Delete, GenericMode (type (:-)), Get, JSON, NamedRoutes
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Type (ProfileResponse (..))
+import Api.Type (Profile (..), ProfileResponse (..))
 import Common.Type.App (App, AppEnv (..))
 import DB.Follow.Query (isFollowing)
 import DB.User.Query (getUserByUsername)
@@ -54,7 +54,7 @@ getProfileHandler auth username = do
       isFol <- case auth of
         S.Authenticated currentUid -> runDB (isFollowing currentUid uid)
         _ -> return False
-      return $ ProfileResponse u.username u.bio u.image isFol
+      return $ ProfileResponse $ Profile u.username u.bio u.image isFol
 
 followHandler :: S.AuthResult UserId -> Text -> App ProfileResponse
 followHandler (S.Authenticated currentUid) username = do
@@ -63,7 +63,7 @@ followHandler (S.Authenticated currentUid) username = do
     Nothing -> throwError S.err404{S.errBody = "UserResponse not found"}
     Just (Entity uid u) -> do
       _ <- runDB (insertBy (DB.Follow currentUid uid))
-      return $ ProfileResponse u.username u.bio u.image True
+      return $ ProfileResponse $ Profile u.username u.bio u.image True
 followHandler _ _ = throwError S.err401
 
 unfollowHandler :: S.AuthResult UserId -> Text -> App ProfileResponse
@@ -73,5 +73,5 @@ unfollowHandler (S.Authenticated currentUid) username = do
     Nothing -> throwError S.err404{S.errBody = "UserResponse not found"}
     Just (Entity uid u) -> do
       runDB (deleteBy (DB.UniqueFollow currentUid uid))
-      return $ ProfileResponse u.username u.bio u.image False
+      return $ ProfileResponse $ Profile u.username u.bio u.image False
 unfollowHandler _ _ = throwError S.err401

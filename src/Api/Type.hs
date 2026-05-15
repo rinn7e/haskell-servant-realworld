@@ -6,8 +6,10 @@ import Data.Text (Text)
 import Data.Time (UTCTime)
 import GHC.Generics (Generic)
 
--- UserResponse
-data UserResponse = UserResponse
+-------------------------------
+-- User
+-------------------------------
+data User = User
   { email :: Text
   , token :: Text
   , username :: Text
@@ -16,19 +18,17 @@ data UserResponse = UserResponse
   }
   deriving (Show, Generic)
 
-instance ToJSON UserResponse where
-  toJSON u =
-    A.object
-      [ "user"
-          .= A.object
-            [ "email" .= u.email
-            , "token" .= u.token
-            , "username" .= u.username
-            , "bio" .= u.bio
-            , "image" .= u.image
-            ]
-      ]
+instance ToJSON User where
+  toJSON = A.genericToJSON A.defaultOptions
 
+-------------------------------
+-- UserResponse
+-------------------------------
+data UserResponse = UserResponse { user :: User } deriving (Show, Generic, ToJSON)
+
+-------------------------------
+-- LoginUserRequest
+-------------------------------
 data LoginUserRequest = LoginUserRequest
   { email :: Text
   , password :: Text
@@ -40,6 +40,9 @@ instance FromJSON LoginUserRequest where
     u <- o .: "user"
     LoginUserRequest <$> u .: "email" <*> u .: "password"
 
+-------------------------------
+-- NewUserRequest
+-------------------------------
 data NewUserRequest = NewUserRequest
   { username :: Text
   , email :: Text
@@ -52,6 +55,9 @@ instance FromJSON NewUserRequest where
     u <- o .: "user"
     NewUserRequest <$> u .: "username" <*> u .: "email" <*> u .: "password"
 
+-------------------------------
+-- UpdateUserRequest
+-------------------------------
 data UpdateUserRequest = UpdateUserRequest
   { email :: Maybe Text
   , username :: Maybe Text
@@ -71,8 +77,10 @@ instance FromJSON UpdateUserRequest where
       <*> u .:? "bio"
       <*> u .:? "image"
 
--- ProfileResponse
-data ProfileResponse = ProfileResponse
+-------------------------------
+-- Profile
+-------------------------------
+data Profile = Profile
   { username :: Text
   , bio :: Maybe Text
   , image :: Maybe Text
@@ -80,20 +88,18 @@ data ProfileResponse = ProfileResponse
   }
   deriving (Show, Generic)
 
-instance ToJSON ProfileResponse where
-  toJSON p =
-    A.object
-      [ "profile"
-          .= A.object
-            [ "username" .= p.username
-            , "bio" .= p.bio
-            , "image" .= p.image
-            , "following" .= p.following
-            ]
-      ]
+instance ToJSON Profile where
+  toJSON = A.genericToJSON A.defaultOptions
 
--- ArticleResponse
-data ArticleResponse = ArticleResponse
+-------------------------------
+-- ProfileResponse
+-------------------------------
+data ProfileResponse = ProfileResponse { profile :: Profile } deriving (Show, Generic, ToJSON)
+
+-------------------------------
+-- Article
+-------------------------------
+data Article = Article
   { slug :: Text
   , title :: Text
   , description :: Text
@@ -103,16 +109,23 @@ data ArticleResponse = ArticleResponse
   , updatedAt :: UTCTime
   , favorited :: Bool
   , favoritesCount :: Int
-  , author :: ProfileResponse
+  , author :: Profile
   }
   deriving (Show, Generic)
 
-instance ToJSON ArticleResponse where
-  toJSON a = A.object ["article" .= a]
+instance ToJSON Article where
+  toJSON = A.genericToJSON A.defaultOptions
 
--- Multiple Articles
+-------------------------------
+-- ArticleResponse
+-------------------------------
+data ArticleResponse = ArticleResponse { article :: Article } deriving (Show, Generic, ToJSON)
+
+-------------------------------
+-- ArticleListResponse
+-------------------------------
 data ArticleListResponse = ArticleListResponse
-  { articles :: [ArticleResponse]
+  { articles :: [Article]
   , articlesCount :: Int
   }
   deriving (Show, Generic)
@@ -124,6 +137,9 @@ instance ToJSON ArticleListResponse where
       , "articlesCount" .= c
       ]
 
+-------------------------------
+-- NewArticleRequest
+-------------------------------
 data NewArticleRequest = NewArticleRequest
   { title :: Text
   , description :: Text
@@ -141,6 +157,9 @@ instance FromJSON NewArticleRequest where
       <*> a .: "body"
       <*> a .:? "tagList"
 
+-------------------------------
+-- UpdateArticleRequest
+-------------------------------
 data UpdateArticleRequest = UpdateArticleRequest
   { title :: Maybe Text
   , description :: Maybe Text
@@ -156,27 +175,40 @@ instance FromJSON UpdateArticleRequest where
       <*> a .:? "description"
       <*> a .:? "body"
 
--- CommentResponse
-data CommentResponse = CommentResponse
+-------------------------------
+-- Comment
+-------------------------------
+data Comment = Comment
   { id :: Int
   , createdAt :: UTCTime
   , updatedAt :: UTCTime
   , body :: Text
-  , author :: ProfileResponse
+  , author :: Profile
   }
   deriving (Show, Generic)
 
-instance ToJSON CommentResponse where
-  toJSON c = A.object ["comment" .= c]
+instance ToJSON Comment where
+  toJSON = A.genericToJSON A.defaultOptions
 
+-------------------------------
+-- CommentResponse
+-------------------------------
+data CommentResponse = CommentResponse { comment :: Comment } deriving (Show, Generic, ToJSON)
+
+-------------------------------
+-- CommentListResponse
+-------------------------------
 data CommentListResponse = CommentListResponse
-  { comments :: [CommentResponse]
+  { comments :: [Comment]
   }
   deriving (Show, Generic)
 
 instance ToJSON CommentListResponse where
   toJSON (CommentListResponse cs) = A.object ["comments" .= cs]
 
+-------------------------------
+-- NewCommentRequest
+-------------------------------
 data NewCommentRequest = NewCommentRequest
   { body :: Text
   }
@@ -187,7 +219,9 @@ instance FromJSON NewCommentRequest where
     c <- o .: "comment"
     NewCommentRequest <$> c .: "body"
 
--- Tags
+-------------------------------
+-- TagListResponse
+-------------------------------
 data TagListResponse = TagListResponse
   { tags :: [Text]
   }
@@ -196,7 +230,9 @@ data TagListResponse = TagListResponse
 instance ToJSON TagListResponse where
   toJSON (TagListResponse ts) = A.object ["tags" .= ts]
 
--- Errors
+-------------------------------
+-- GenericErrorResponse
+-------------------------------
 data GenericErrorResponse = GenericErrorResponse
   { errors :: A.Object
   }
@@ -205,7 +241,9 @@ data GenericErrorResponse = GenericErrorResponse
 instance ToJSON GenericErrorResponse where
   toJSON (GenericErrorResponse errs) = A.object ["errors" .= errs]
 
+-------------------------------
 -- MetadataResponse
+-------------------------------
 data MetadataResponse = MetadataResponse
   { appVersion :: Text
   , lastCommitHash :: Text
@@ -214,9 +252,5 @@ data MetadataResponse = MetadataResponse
   deriving (Show, Generic)
 
 instance ToJSON MetadataResponse where
-  toJSON m =
-    A.object
-      [ "app_version" .= m.appVersion
-      , "last_commit_hash" .= m.lastCommitHash
-      , "last_ran_migration" .= m.lastRanMigration
-      ]
+  toJSON = A.genericToJSON A.defaultOptions
+

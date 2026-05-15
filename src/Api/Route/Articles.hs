@@ -1,6 +1,8 @@
 module Api.Route.Articles where
 
 import Api.Util (toArticleResponse, toCommentResponse)
+import Data.Map.Append (unAppendMap)
+import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time (getCurrentTime)
@@ -14,7 +16,7 @@ import Servant (Capture, Delete, GenericMode (type (:-)), Get, JSON, NamedRoutes
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Type (ArticleResponse (..), ArticleListResponse (..), CommentResponse (..), CommentListResponse (..), NewArticleRequest (..), NewCommentRequest (..), ProfileResponse (..), UpdateArticleRequest (..))
+import Api.Type (Article (..), ArticleListResponse (..), ArticleResponse (..), Comment (..), CommentListResponse (..), CommentResponse (..), NewArticleRequest (..), NewCommentRequest (..), Profile (..), UpdateArticleRequest (..))
 import Common.Type.App (App, AppEnv (..))
 import DB.Article.Query
 import DB.Comment.Query
@@ -87,7 +89,7 @@ getFeedHandler (S.Authenticated uid) mLimit mOffset = do
   let limit = maybe 20 id mLimit
   let offset = maybe 0 id mOffset
   groupedArticles <- runDB (listFeed uid limit offset)
-  let articles = map toArticleResponse groupedArticles
+  let articles = map toArticleResponse $ Map.elems $ unAppendMap groupedArticles
   return $ ArticleListResponse articles (length articles)
 getFeedHandler _ _ _ = throwError S.err401
 
@@ -99,7 +101,7 @@ getArticlesHandler auth mTag mAuthor mFavorited mLimit mOffset = do
         S.Authenticated uid -> Just uid
         _ -> Nothing
   groupedArticles <- runDB (listArticles mUid mTag mAuthor mFavorited limit offset)
-  let articles = map toArticleResponse groupedArticles
+  let articles = map toArticleResponse $ Map.elems $ unAppendMap groupedArticles
   return $ ArticleListResponse articles (length articles)
 
 createArticleHandler :: S.AuthResult UserId -> NewArticleRequest -> App ArticleResponse
@@ -116,7 +118,7 @@ createArticleHandler (S.Authenticated uid) (NewArticleRequest title desc body mT
 
   mGrouped <- runDB (getArticleWithAuthor (Just uid) slug)
   case mGrouped of
-    Just grouped -> return $ toArticleResponse grouped
+    Just grouped -> return $ ArticleResponse $ toArticleResponse grouped
     Nothing -> throwError S.err500
  where
   ensureTag aid tagName = do
@@ -136,7 +138,7 @@ getArticleHandler auth slug = do
   mGrouped <- runDB (getArticleWithAuthor mUid slug)
   case mGrouped of
     Nothing -> throwError S.err404
-    Just grouped -> return $ toArticleResponse grouped
+    Just grouped -> return $ ArticleResponse $ toArticleResponse grouped
 
 updateArticleHandler :: S.AuthResult UserId -> Text -> UpdateArticleRequest -> App ArticleResponse
 updateArticleHandler (S.Authenticated uid) slug (UpdateArticleRequest mTitle mDesc mBody) = do
@@ -161,7 +163,7 @@ updateArticleHandler (S.Authenticated uid) slug (UpdateArticleRequest mTitle mDe
           runDB (replace aid newArt)
           mGrouped <- runDB (getArticleWithAuthor (Just uid) newSlug)
           case mGrouped of
-            Just grouped -> return $ toArticleResponse grouped
+            Just grouped -> return $ ArticleResponse $ toArticleResponse grouped
             Nothing -> throwError S.err500
 updateArticleHandler _ _ _ = throwError S.err401
 
@@ -205,7 +207,7 @@ createCommentHandler (S.Authenticated uid) slug (NewCommentRequest body) = do
       mUser <- runDB (get uid)
       case mUser of
         Nothing -> throwError S.err500
-        Just u -> runDB (toCommentResponse env (Just uid) (Entity cid comment, Entity uid u))
+        Just u -> CommentResponse <$> runDB (toCommentResponse env (Just uid) (Entity cid comment, Entity uid u))
 createCommentHandler _ _ _ = throwError S.err401
 
 deleteCommentHandler :: S.AuthResult UserId -> Text -> Int -> App S.NoContent
@@ -231,7 +233,7 @@ favoriteHandler (S.Authenticated uid) slug = do
       _ <- runDB (insertBy (DB.Favorite uid aid))
       mGrouped <- runDB (getArticleWithAuthor (Just uid) slug)
       case mGrouped of
-        Just grouped -> return $ toArticleResponse grouped
+        Just grouped -> return $ ArticleResponse $ toArticleResponse grouped
         Nothing -> throwError S.err500
 favoriteHandler _ _ = throwError S.err401
 
@@ -244,7 +246,7 @@ unfavoriteHandler (S.Authenticated uid) slug = do
       runDB (deleteBy (DB.UniqueFavorite uid aid))
       mGrouped <- runDB (getArticleWithAuthor (Just uid) slug)
       case mGrouped of
-        Just grouped -> return $ toArticleResponse grouped
+        Just grouped -> return $ ArticleResponse $ toArticleResponse grouped
         Nothing -> throwError S.err500
 unfavoriteHandler _ _ = throwError S.err401
 

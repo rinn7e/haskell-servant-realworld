@@ -136,7 +136,8 @@ listFeedSQL currentUserId lim off = do
     , isFollowingUserExpr (author ^. UserId) (val currentUserId)
     )
 
--- | Subquery to filter article IDs by tags, author, and favorites
+-- | Helper to apply article filters (by author, tag, and favorited user) to a query.
+-- Extracted from filterArticlesIdsSQL to be reused by countArticles.
 applyArticleFilters
   :: Maybe Text
   -> Maybe Text
@@ -181,6 +182,8 @@ filterArticlesIdsSQL mTag mAuthor mFavorited lim off = do
   when (off > 0) $ offset (fromIntegral off)
   return (article ^. ArticleId)
 
+-- | Count total articles matching filters, ignoring pagination limits.
+-- Used to return the total count in the API response.
 countArticles :: (MonadUnliftIO m) => Maybe Text -> Maybe Text -> Maybe Text -> SqlPersistT m Int
 countArticles mTag mAuthor mFavorited = do
   res <- select $ do
@@ -192,6 +195,7 @@ countArticles mTag mAuthor mFavorited = do
   headMay (x : _) = Just x
   headMay [] = Nothing
 
+-- | Count total articles in a user's feed, ignoring pagination limits.
 countFeed :: (MonadUnliftIO m) => UserId -> SqlPersistT m Int
 countFeed currentUserId = do
   res <- select $ do

@@ -108,7 +108,6 @@ getArticlesHandler auth mTag mAuthor mFavorited mLimit mOffset = do
 
 createArticleHandler :: S.AuthResult UserId -> NewArticleRequest -> App ArticleResponse
 createArticleHandler (S.Authenticated uid) (NewArticleRequest title desc body mTags) = do
-  env <- ask @AppEnv
   now <- liftIO getCurrentTime
   let slug = T.intercalate "-" $ T.words $ T.toLower title
   let article = DB.Article slug title desc body uid now now
@@ -122,14 +121,6 @@ createArticleHandler (S.Authenticated uid) (NewArticleRequest title desc body mT
   case mGrouped of
     Just grouped -> return $ ArticleResponse $ toArticleResponse grouped
     Nothing -> throwError S.err500
- where
-  ensureTag aid tagName = do
-    tid <- do
-      res <- insertBy (DB.Tag tagName)
-      case res of
-        Left (Entity tId _) -> return tId
-        Right tId -> return tId
-    insertBy (DB.ArticleTag aid tid)
 createArticleHandler _ _ = throwError S.err401
 
 getArticleHandler :: S.AuthResult UserId -> Text -> App ArticleResponse
@@ -143,8 +134,7 @@ getArticleHandler auth slug = do
     Just grouped -> return $ ArticleResponse $ toArticleResponse grouped
 
 updateArticleHandler :: S.AuthResult UserId -> Text -> UpdateArticleRequest -> App ArticleResponse
-updateArticleHandler (S.Authenticated uid) slug (UpdateArticleRequest mTitle mDesc mBody) = do
-  env <- ask @AppEnv
+updateArticleHandler (S.Authenticated uid) slug (UpdateArticleRequest mTitle mDesc mBody mTags) = do
   mArt <- runDB (getArticleBySlug slug)
   case mArt of
     Nothing -> throwError S.err404
@@ -162,12 +152,33 @@ updateArticleHandler (S.Authenticated uid) slug (UpdateArticleRequest mTitle mDe
                   , DB.body = maybe art.body id mBody
                   , DB.updatedAt = now
                   }
-          runDB (replace aid newArt)
+          runDB $ do
+            replace aid newArt
+            -- Update tags if provided in the request
+            case mTags of
+              Just tags -> do
+                -- Clear existing tags and link new ones
+                deleteWhere [DB.ArticleTagArticleId ==. aid]
+                mapM_ (ensureTag aid) tags
+              Nothing -> return ()
+
           mGrouped <- runDB (getArticleWithAuthor (Just uid) newSlug)
           case mGrouped of
             Just grouped -> return $ ArticleResponse $ toArticleResponse grouped
             Nothing -> throwError S.err500
 updateArticleHandler _ _ _ = throwError S.err401
+
+-- | Helper to ensure a tag exists and is linked to an article
+ensureTag :: DB.ArticleId -> Text -> SqlPersistT IO ()
+ensureTag aid tagName = do
+  -- Create tag if it doesn't exist, then link it to the article
+  tid <- do
+    res <- insertBy (DB.Tag tagName)
+    case res of
+      Left (Entity tId _) -> return tId
+      Right tId -> return tId
+  _ <- insertBy (DB.ArticleTag aid tid)
+  return ()
 
 deleteArticleHandler :: S.AuthResult UserId -> Text -> App S.NoContent
 deleteArticleHandler (S.Authenticated uid) slug = do

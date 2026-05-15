@@ -164,6 +164,7 @@ data UpdateArticleRequest = UpdateArticleRequest
   { title :: Maybe Text
   , description :: Maybe Text
   , body :: Maybe Text
+  , tagList :: Maybe [Text]
   }
   deriving (Show, Generic)
 
@@ -174,6 +175,7 @@ instance FromJSON UpdateArticleRequest where
       <$> a .:? "title"
       <*> a .:? "description"
       <*> a .:? "body"
+      <*> a .:? "tagList"
 
 -------------------------------
 -- Comment

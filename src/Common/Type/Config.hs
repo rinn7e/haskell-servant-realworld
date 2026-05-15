@@ -15,6 +15,7 @@ data Config = Config
   , gitCommitHash :: Text
   , port :: Int
   , showSqlLog :: Bool
+  , allowCorsEnabled :: Bool
   }
 
 loadConfig :: IO Config
@@ -25,6 +26,7 @@ loadConfig = do
   sqlLog <- lookupEnv "SHOW_SQL_LOG"
   commit <- lookupEnv "GIT_COMMIT_HASH"
   portStr <- lookupEnv "PORT"
+  allowCorsStr <- lookupEnv "ALLOW_CORS"
 
   return
     Config
@@ -34,6 +36,7 @@ loadConfig = do
       , gitCommitHash = T.pack (maybe "unknown" id commit)
       , port = maybe 3000 read (portStr >>= \s -> if null s then Nothing else Just s)
       , showSqlLog = sqlLog == Just "true"
+      , allowCorsEnabled = allowCorsStr == Just "true"
       }
  where
   defaultConnStr = "host=localhost dbname=realworld user=postgres password=postgres port=5432"

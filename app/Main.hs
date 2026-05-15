@@ -12,6 +12,7 @@ import Database.Persist.Postgresql (createPostgresqlPool)
 import Database.Persist.Sql (getMigration, runSqlPool)
 import Network.Wai (Middleware, Request (..))
 import Network.Wai.Handler.Warp (run)
+import Network.Wai.Middleware.Cors (CorsResourcePolicy (..), cors, simpleCorsResourcePolicy)
 import Network.Wai.Middleware.RequestLogger (logStdoutDev)
 import Servant (Context (..))
 import Servant qualified as S
@@ -69,8 +70,10 @@ main = do
       cfg = jwtSettings :. S.defaultCookieSettings :. EmptyContext
       port = config.port
 
+  let corsMiddleware = if config.allowCorsEnabled then allowCors else id
+  
   putStrLn $ "Starting server on port " ++ show port
-  run port $ logStdoutDev $ authMiddleware $ S.serveWithContext api cfg (server (AppEnv pool jwtSettings jwtKey config))
+  run port $ logStdoutDev $ corsMiddleware $ authMiddleware $ S.serveWithContext api cfg (server (AppEnv pool jwtSettings jwtKey config))
 
 api :: Proxy API
 api = Proxy
@@ -84,3 +87,18 @@ authMiddleware app req sendResponse =
               ("Authorization", "Bearer " <> BS.drop 6 auth) : filter ((/= "Authorization") . fst) headers
         _ -> headers
    in app req{requestHeaders = newHeaders} sendResponse
+
+appCorsResourcePolicy :: CorsResourcePolicy
+appCorsResourcePolicy = CorsResourcePolicy {
+    corsOrigins        = Nothing
+  , corsMethods        = ["OPTIONS", "GET", "PUT", "POST", "DELETE"]
+  , corsRequestHeaders = ["Authorization", "Content-Type"]
+  , corsExposedHeaders = Nothing
+  , corsMaxAge         = Nothing
+  , corsVaryOrigin     = False
+  , corsRequireOrigin  = False
+  , corsIgnoreFailures = False
+}
+
+allowCors :: Middleware
+allowCors = cors (const $ Just appCorsResourcePolicy)

@@ -9,7 +9,7 @@ import Servant (GenericMode (type (:-)), Get, JSON, NamedRoutes)
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Type (Metadata (..))
+import Api.Type (MetadataResponse (..))
 import Common.Type.App (App, AppEnv (..))
 import Common.Type.Config (Config (..))
 import DB.Migration (getLastRanMigration)
@@ -19,7 +19,7 @@ import Effectful.Reader.Static (ask)
 import Paths_haskell_servant_realworld qualified as Paths
 
 data MetadataRoutes mode = MetadataRoutes
-  { metadata :: mode :- Get '[JSON] Metadata
+  { metadata :: mode :- Get '[JSON] MetadataResponse
   -- ^ GET /api/metadata
   }
   deriving stock (Generic)
@@ -30,12 +30,12 @@ metadataServer _auth =
     { metadata = metadataHandler
     }
 
-metadataHandler :: App Metadata
+metadataHandler :: App MetadataResponse
 metadataHandler = do
   AppEnv{appConfig = config} <- ask
   lastMigration <- runDB getLastRanMigration
   return $
-    Metadata
+    MetadataResponse
       { appVersion = T.pack (showVersion Paths.version)
       , lastCommitHash = config.gitCommitHash
       , lastRanMigration = lastMigration

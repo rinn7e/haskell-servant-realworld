@@ -11,7 +11,7 @@ import Servant (GenericMode (type (:-)), JSON, NamedRoutes, Post, PostCreated, R
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Type (LoginUserRequest (..), NewUserRequest (..), User (..))
+import Api.Type (LoginUserRequest (..), NewUserRequest (..), UserResponse (..))
 import Common.Type.App (App, AppEnv (..))
 import Common.Util.Auth (generateToken)
 import DB.User.Query (getUserByEmail)
@@ -20,9 +20,9 @@ import DB.Schema.Type qualified as DB
 import DB.Util (runDB)
 
 data UsersRoutes mode = UsersRoutes
-  { login :: mode :- "login" :> ReqBody '[JSON] LoginUserRequest :> Post '[JSON] User
+  { login :: mode :- "login" :> ReqBody '[JSON] LoginUserRequest :> Post '[JSON] UserResponse
   -- ^ POST /api/users/login
-  , register :: mode :- ReqBody '[JSON] NewUserRequest :> PostCreated '[JSON] User
+  , register :: mode :- ReqBody '[JSON] NewUserRequest :> PostCreated '[JSON] UserResponse
   -- ^ POST /api/users
   }
   deriving stock (Generic)
@@ -34,7 +34,7 @@ usersServer auth =
     , register = registerHandler auth
     }
 
-loginHandler :: S.AuthResult UserId -> LoginUserRequest -> App User
+loginHandler :: S.AuthResult UserId -> LoginUserRequest -> App UserResponse
 loginHandler _ (LoginUserRequest email pwd) = do
   AppEnv{appJwtKey = jwtKey} <- ask
   mUser <- runDB (getUserByEmail email)
@@ -44,13 +44,13 @@ loginHandler _ (LoginUserRequest email pwd) = do
       case checkPassword (mkPassword pwd) (PasswordHash u.password) of
         PasswordCheckSuccess -> do
           token <- liftIO $ generateToken jwtKey uid
-          return $ User u.email token u.username u.bio u.image
+          return $ UserResponse u.email token u.username u.bio u.image
         PasswordCheckFail -> throwError S.err401{S.errBody = "Invalid email or password"}
 
-registerHandler :: S.AuthResult UserId -> NewUserRequest -> App User
+registerHandler :: S.AuthResult UserId -> NewUserRequest -> App UserResponse
 registerHandler _ (NewUserRequest username email pwd) = do
   AppEnv{appJwtKey = jwtKey} <- ask
   hashedPwd <- liftIO $ hashPassword (mkPassword pwd)
   uid <- runDB $ insert $ DB.User username email (unPasswordHash hashedPwd) Nothing Nothing
   token <- liftIO $ generateToken jwtKey uid
-  return $ User email token username Nothing Nothing
+  return $ UserResponse email token username Nothing Nothing

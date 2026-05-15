@@ -14,7 +14,7 @@ import Servant (Capture, Delete, GenericMode (type (:-)), Get, JSON, NamedRoutes
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Type (Article (..), ArticlesResponse (..), Comment (..), CommentsResponse (..), NewArticleRequest (..), NewCommentRequest (..), Profile (..), UpdateArticleRequest (..))
+import Api.Type (ArticleResponse (..), ArticleListResponse (..), CommentResponse (..), CommentListResponse (..), NewArticleRequest (..), NewCommentRequest (..), ProfileResponse (..), UpdateArticleRequest (..))
 import Common.Type.App (App, AppEnv (..))
 import DB.Article.Query
 import DB.Comment.Query
@@ -23,35 +23,35 @@ import DB.Schema.Type qualified as DB
 import DB.Util (runDB)
 
 data ArticlesRoutes mode = ArticlesRoutes
-  { feed :: mode :- "feed" :> QueryParam "limit" Int :> QueryParam "offset" Int :> Get '[JSON] ArticlesResponse
+  { feed :: mode :- "feed" :> QueryParam "limit" Int :> QueryParam "offset" Int :> Get '[JSON] ArticleListResponse
   -- ^ GET /api/articles/feed
-  , list :: mode :- QueryParam "tag" Text :> QueryParam "author" Text :> QueryParam "favorited" Text :> QueryParam "limit" Int :> QueryParam "offset" Int :> Get '[JSON] ArticlesResponse
+  , list :: mode :- QueryParam "tag" Text :> QueryParam "author" Text :> QueryParam "favorited" Text :> QueryParam "limit" Int :> QueryParam "offset" Int :> Get '[JSON] ArticleListResponse
   -- ^ GET /api/articles
-  , create :: mode :- ReqBody '[JSON] NewArticleRequest :> PostCreated '[JSON] Article
+  , create :: mode :- ReqBody '[JSON] NewArticleRequest :> PostCreated '[JSON] ArticleResponse
   -- ^ POST /api/articles
   , article :: mode :- Capture "slug" Text :> NamedRoutes ArticleRoutes
   }
   deriving stock (Generic)
 
 data ArticleRoutes mode = ArticleRoutes
-  { get :: mode :- Get '[JSON] Article
+  { get :: mode :- Get '[JSON] ArticleResponse
   -- ^ GET /api/articles/:slug
-  , update :: mode :- ReqBody '[JSON] UpdateArticleRequest :> Put '[JSON] Article
+  , update :: mode :- ReqBody '[JSON] UpdateArticleRequest :> Put '[JSON] ArticleResponse
   -- ^ PUT /api/articles/:slug
   , delete :: mode :- Delete '[JSON] S.NoContent
   -- ^ DELETE /api/articles/:slug
   , comments :: mode :- "comments" :> NamedRoutes CommentsRoutes
-  , favorite :: mode :- "favorite" :> Post '[JSON] Article
+  , favorite :: mode :- "favorite" :> Post '[JSON] ArticleResponse
   -- ^ POST /api/articles/:slug/favorite
-  , unfavorite :: mode :- "favorite" :> Delete '[JSON] Article
+  , unfavorite :: mode :- "favorite" :> Delete '[JSON] ArticleResponse
   -- ^ DELETE /api/articles/:slug/favorite
   }
   deriving stock (Generic)
 
 data CommentsRoutes mode = CommentsRoutes
-  { list :: mode :- Get '[JSON] CommentsResponse
+  { list :: mode :- Get '[JSON] CommentListResponse
   -- ^ GET /api/articles/:slug/comments
-  , create :: mode :- ReqBody '[JSON] NewCommentRequest :> PostCreated '[JSON] Comment
+  , create :: mode :- ReqBody '[JSON] NewCommentRequest :> PostCreated '[JSON] CommentResponse
   -- ^ POST /api/articles/:slug/comments
   , delete :: mode :- Capture "id" Int :> Delete '[JSON] S.NoContent
   -- ^ DELETE /api/articles/:slug/comments/:id
@@ -82,16 +82,16 @@ articlesServer auth =
 
 -- Handlers
 
-getFeedHandler :: S.AuthResult UserId -> Maybe Int -> Maybe Int -> App ArticlesResponse
+getFeedHandler :: S.AuthResult UserId -> Maybe Int -> Maybe Int -> App ArticleListResponse
 getFeedHandler (S.Authenticated uid) mLimit mOffset = do
   let limit = maybe 20 id mLimit
   let offset = maybe 0 id mOffset
   groupedArticles <- runDB (listFeed uid limit offset)
   let articles = map toArticleResponse groupedArticles
-  return $ ArticlesResponse articles (length articles)
+  return $ ArticleListResponse articles (length articles)
 getFeedHandler _ _ _ = throwError S.err401
 
-getArticlesHandler :: S.AuthResult UserId -> Maybe Text -> Maybe Text -> Maybe Text -> Maybe Int -> Maybe Int -> App ArticlesResponse
+getArticlesHandler :: S.AuthResult UserId -> Maybe Text -> Maybe Text -> Maybe Text -> Maybe Int -> Maybe Int -> App ArticleListResponse
 getArticlesHandler auth mTag mAuthor mFavorited mLimit mOffset = do
   let limit = maybe 20 id mLimit
   let offset = maybe 0 id mOffset
@@ -100,9 +100,9 @@ getArticlesHandler auth mTag mAuthor mFavorited mLimit mOffset = do
         _ -> Nothing
   groupedArticles <- runDB (listArticles mUid mTag mAuthor mFavorited limit offset)
   let articles = map toArticleResponse groupedArticles
-  return $ ArticlesResponse articles (length articles)
+  return $ ArticleListResponse articles (length articles)
 
-createArticleHandler :: S.AuthResult UserId -> NewArticleRequest -> App Article
+createArticleHandler :: S.AuthResult UserId -> NewArticleRequest -> App ArticleResponse
 createArticleHandler (S.Authenticated uid) (NewArticleRequest title desc body mTags) = do
   env <- ask @AppEnv
   now <- liftIO getCurrentTime
@@ -128,7 +128,7 @@ createArticleHandler (S.Authenticated uid) (NewArticleRequest title desc body mT
     insertBy (DB.ArticleTag aid tid)
 createArticleHandler _ _ = throwError S.err401
 
-getArticleHandler :: S.AuthResult UserId -> Text -> App Article
+getArticleHandler :: S.AuthResult UserId -> Text -> App ArticleResponse
 getArticleHandler auth slug = do
   let mUid = case auth of
         S.Authenticated uid -> Just uid
@@ -138,7 +138,7 @@ getArticleHandler auth slug = do
     Nothing -> throwError S.err404
     Just grouped -> return $ toArticleResponse grouped
 
-updateArticleHandler :: S.AuthResult UserId -> Text -> UpdateArticleRequest -> App Article
+updateArticleHandler :: S.AuthResult UserId -> Text -> UpdateArticleRequest -> App ArticleResponse
 updateArticleHandler (S.Authenticated uid) slug (UpdateArticleRequest mTitle mDesc mBody) = do
   env <- ask @AppEnv
   mArt <- runDB (getArticleBySlug slug)
@@ -178,7 +178,7 @@ deleteArticleHandler (S.Authenticated uid) slug = do
           return S.NoContent
 deleteArticleHandler _ _ = throwError S.err401
 
-getCommentsHandler :: S.AuthResult UserId -> Text -> App CommentsResponse
+getCommentsHandler :: S.AuthResult UserId -> Text -> App CommentListResponse
 getCommentsHandler auth slug = do
   env <- ask @AppEnv
   mArt <- runDB (getArticleBySlug slug)
@@ -190,9 +190,9 @@ getCommentsHandler auth slug = do
             S.Authenticated uid -> Just uid
             _ -> Nothing
       comments <- runDB (mapM (toCommentResponse env mUid) pairs)
-      return $ CommentsResponse comments
+      return $ CommentListResponse comments
 
-createCommentHandler :: S.AuthResult UserId -> Text -> NewCommentRequest -> App Comment
+createCommentHandler :: S.AuthResult UserId -> Text -> NewCommentRequest -> App CommentResponse
 createCommentHandler (S.Authenticated uid) slug (NewCommentRequest body) = do
   env <- ask @AppEnv
   mArt <- runDB (getArticleBySlug slug)
@@ -222,7 +222,7 @@ deleteCommentHandler (S.Authenticated uid) _ cidInt = do
           return S.NoContent
 deleteCommentHandler _ _ _ = throwError S.err401
 
-favoriteHandler :: S.AuthResult UserId -> Text -> App Article
+favoriteHandler :: S.AuthResult UserId -> Text -> App ArticleResponse
 favoriteHandler (S.Authenticated uid) slug = do
   mArt <- runDB (getArticleBySlug slug)
   case mArt of
@@ -235,7 +235,7 @@ favoriteHandler (S.Authenticated uid) slug = do
         Nothing -> throwError S.err500
 favoriteHandler _ _ = throwError S.err401
 
-unfavoriteHandler :: S.AuthResult UserId -> Text -> App Article
+unfavoriteHandler :: S.AuthResult UserId -> Text -> App ArticleResponse
 unfavoriteHandler (S.Authenticated uid) slug = do
   mArt <- runDB (getArticleBySlug slug)
   case mArt of

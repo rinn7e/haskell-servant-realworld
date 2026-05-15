@@ -9,7 +9,19 @@ import Database.Esqueleto.Experimental
 
 import DB.Schema.Type
 
-type ArticleSQLType =
+
+-- | SQL expression level (internal Esqueleto query)
+type ArticleExpr =
+  ( SqlExpr (Entity Article)
+  , SqlExpr (Entity User)
+  , SqlExpr (Maybe (Entity Tag))
+  , SqlExpr (Value (Maybe Int))
+  , SqlExpr (Value Bool)
+  , SqlExpr (Value Bool)
+  )
+
+-- | SQL result level (raw row from database)
+type ArticleRow =
   ( Entity Article
   , Entity User -- author
   , Maybe (Entity Tag)
@@ -18,7 +30,8 @@ type ArticleSQLType =
   , Value Bool -- is following author
   )
 
-type ArticleGroupedType =
+-- | Grouped level (aggregated data for API response)
+type ArticleGrouped =
   ( First (Entity Article)
   , First (Entity User)
   , AppendMap TagId (First (Entity Tag))
@@ -28,7 +41,7 @@ type ArticleGroupedType =
     )
   )
 
-mkArticleGrouped :: ArticleSQLType -> AppendMap (Down UTCTime, ArticleId) ArticleGroupedType
+mkArticleGrouped :: ArticleRow -> AppendMap (Down UTCTime, ArticleId) ArticleGrouped
 mkArticleGrouped (art, auth, mTag, Value favCount, Value isFav, Value isFol) =
   AppendMap $
     Map.singleton

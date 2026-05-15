@@ -9,14 +9,14 @@ import Servant (GenericMode (type (:-)), Get, JSON, NamedRoutes, (:>))
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Type (TagsResponse (..))
+import Api.Type (TagListResponse (..))
 import Common.Type.App (App, AppEnv (..))
 import DB.Tag.Query (getTags)
 import DB.Schema.Type (UserId)
 import DB.Util (runDB)
 
 data TagsRoutes mode = TagsRoutes
-  { tags :: mode :- Get '[JSON] TagsResponse
+  { tags :: mode :- Get '[JSON] TagListResponse
   -- ^ GET /api/tags
   }
   deriving stock (Generic)
@@ -27,7 +27,7 @@ tagsServer _auth =
     { tags = getTagsHandler
     }
 
-getTagsHandler :: App TagsResponse
+getTagsHandler :: App TagListResponse
 getTagsHandler = do
   tags <- runDB getTags
-  return $ TagsResponse tags
+  return $ TagListResponse tags

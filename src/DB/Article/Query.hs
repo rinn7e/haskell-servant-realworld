@@ -23,7 +23,7 @@ getArticleBySlugSQL slug = do
   where_ (article ^. ArticleSlug ==. val slug)
   return article
 
-getArticleWithAuthor :: (MonadUnliftIO m) => Maybe UserId -> Text -> SqlPersistT m (Maybe ArticleGroupedType)
+getArticleWithAuthor :: (MonadUnliftIO m) => Maybe UserId -> Text -> SqlPersistT m (Maybe ArticleGrouped)
 getArticleWithAuthor mCurrentUserId slug = do
   result <- select $ getArticleWithAuthorSQL mCurrentUserId slug
   return $ headMay $ Map.elems $ unAppendMap $ mconcat $ map mkArticleGrouped result
@@ -33,15 +33,7 @@ getArticleWithAuthor mCurrentUserId slug = do
 
 getArticleWithAuthorSQL
   :: Maybe UserId
-  -> Text
-  -> SqlQuery
-      ( SqlExpr (Entity Article)
-      , SqlExpr (Entity User)
-      , SqlExpr (Maybe (Entity Tag))
-      , SqlExpr (Value (Maybe Int))
-      , SqlExpr (Value Bool)
-      , SqlExpr (Value Bool)
-      )
+  -> Text -> SqlQuery ArticleExpr
 getArticleWithAuthorSQL mCurrentUserId slug = do
   (((article :& author) :& articleTag) :& tag) <-
     from $
@@ -79,7 +71,7 @@ listArticles
   -> Maybe Text
   -> Int
   -> Int
-  -> SqlPersistT IO [(ArticleGroupedType)]
+  -> SqlPersistT IO [(ArticleGrouped)]
 listArticles mCurrentUserId mTag mAuthor mFavorited lim off = do
   result <- select $ listArticlesSQL mCurrentUserId mTag mAuthor mFavorited lim off
   return $ Map.elems $ unAppendMap $ mconcat $ map mkArticleGrouped result
@@ -90,15 +82,7 @@ listArticlesSQL
   -> Maybe Text
   -> Maybe Text
   -> Int
-  -> Int
-  -> SqlQuery
-      ( SqlExpr (Entity Article)
-      , SqlExpr (Entity User)
-      , SqlExpr (Maybe (Entity Tag))
-      , SqlExpr (Value (Maybe Int))
-      , SqlExpr (Value Bool)
-      , SqlExpr (Value Bool)
-      )
+  -> Int -> SqlQuery ArticleExpr
 listArticlesSQL mCurrentUserId mTag mAuthor mFavorited lim off = do
   -- Subquery for filtered and paginated article IDs
   let articleIdsQuery = do
@@ -159,7 +143,7 @@ listArticlesSQL mCurrentUserId mTag mAuthor mFavorited lim off = do
 
   return (article, author, tag, favCount, isFav, isFol)
 
-listFeed :: (MonadUnliftIO m) => UserId -> Int -> Int -> SqlPersistT m [ArticleGroupedType]
+listFeed :: (MonadUnliftIO m) => UserId -> Int -> Int -> SqlPersistT m [ArticleGrouped]
 listFeed currentUserId lim off = do
   result <- select $ listFeedSQL currentUserId lim off
   return $ Map.elems $ unAppendMap $ mconcat $ map mkArticleGrouped result
@@ -167,15 +151,7 @@ listFeed currentUserId lim off = do
 listFeedSQL
   :: UserId
   -> Int
-  -> Int
-  -> SqlQuery
-      ( SqlExpr (Entity Article)
-      , SqlExpr (Entity User)
-      , SqlExpr (Maybe (Entity Tag))
-      , SqlExpr (Value (Maybe Int))
-      , SqlExpr (Value Bool)
-      , SqlExpr (Value Bool)
-      )
+  -> Int -> SqlQuery ArticleExpr
 listFeedSQL currentUserId lim off = do
   -- Subquery for filtered and paginated article IDs
   let articleIdsQuery = do

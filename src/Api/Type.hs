@@ -6,8 +6,8 @@ import Data.Text (Text)
 import Data.Time (UTCTime)
 import GHC.Generics (Generic)
 
--- User
-data User = User
+-- UserResponse
+data UserResponse = UserResponse
   { email :: Text
   , token :: Text
   , username :: Text
@@ -16,7 +16,7 @@ data User = User
   }
   deriving (Show, Generic)
 
-instance ToJSON User where
+instance ToJSON UserResponse where
   toJSON u =
     A.object
       [ "user"
@@ -71,8 +71,8 @@ instance FromJSON UpdateUserRequest where
       <*> u .:? "bio"
       <*> u .:? "image"
 
--- Profile
-data Profile = Profile
+-- ProfileResponse
+data ProfileResponse = ProfileResponse
   { username :: Text
   , bio :: Maybe Text
   , image :: Maybe Text
@@ -80,7 +80,7 @@ data Profile = Profile
   }
   deriving (Show, Generic)
 
-instance ToJSON Profile where
+instance ToJSON ProfileResponse where
   toJSON p =
     A.object
       [ "profile"
@@ -92,8 +92,8 @@ instance ToJSON Profile where
             ]
       ]
 
--- Article
-data Article = Article
+-- ArticleResponse
+data ArticleResponse = ArticleResponse
   { slug :: Text
   , title :: Text
   , description :: Text
@@ -103,22 +103,22 @@ data Article = Article
   , updatedAt :: UTCTime
   , favorited :: Bool
   , favoritesCount :: Int
-  , author :: Profile
+  , author :: ProfileResponse
   }
   deriving (Show, Generic)
 
-instance ToJSON Article where
+instance ToJSON ArticleResponse where
   toJSON a = A.object ["article" .= a]
 
 -- Multiple Articles
-data ArticlesResponse = ArticlesResponse
-  { articles :: [Article]
+data ArticleListResponse = ArticleListResponse
+  { articles :: [ArticleResponse]
   , articlesCount :: Int
   }
   deriving (Show, Generic)
 
-instance ToJSON ArticlesResponse where
-  toJSON (ArticlesResponse as c) =
+instance ToJSON ArticleListResponse where
+  toJSON (ArticleListResponse as c) =
     A.object
       [ "articles" .= as
       , "articlesCount" .= c
@@ -156,26 +156,26 @@ instance FromJSON UpdateArticleRequest where
       <*> a .:? "description"
       <*> a .:? "body"
 
--- Comment
-data Comment = Comment
+-- CommentResponse
+data CommentResponse = CommentResponse
   { id :: Int
   , createdAt :: UTCTime
   , updatedAt :: UTCTime
   , body :: Text
-  , author :: Profile
+  , author :: ProfileResponse
   }
   deriving (Show, Generic)
 
-instance ToJSON Comment where
+instance ToJSON CommentResponse where
   toJSON c = A.object ["comment" .= c]
 
-data CommentsResponse = CommentsResponse
-  { comments :: [Comment]
+data CommentListResponse = CommentListResponse
+  { comments :: [CommentResponse]
   }
   deriving (Show, Generic)
 
-instance ToJSON CommentsResponse where
-  toJSON (CommentsResponse cs) = A.object ["comments" .= cs]
+instance ToJSON CommentListResponse where
+  toJSON (CommentListResponse cs) = A.object ["comments" .= cs]
 
 data NewCommentRequest = NewCommentRequest
   { body :: Text
@@ -188,32 +188,32 @@ instance FromJSON NewCommentRequest where
     NewCommentRequest <$> c .: "body"
 
 -- Tags
-data TagsResponse = TagsResponse
+data TagListResponse = TagListResponse
   { tags :: [Text]
   }
   deriving (Show, Generic)
 
-instance ToJSON TagsResponse where
-  toJSON (TagsResponse ts) = A.object ["tags" .= ts]
+instance ToJSON TagListResponse where
+  toJSON (TagListResponse ts) = A.object ["tags" .= ts]
 
 -- Errors
-data GenericError = GenericError
+data GenericErrorResponse = GenericErrorResponse
   { errors :: A.Object
   }
   deriving (Show, Generic)
 
-instance ToJSON GenericError where
-  toJSON (GenericError errs) = A.object ["errors" .= errs]
+instance ToJSON GenericErrorResponse where
+  toJSON (GenericErrorResponse errs) = A.object ["errors" .= errs]
 
--- Metadata
-data Metadata = Metadata
+-- MetadataResponse
+data MetadataResponse = MetadataResponse
   { appVersion :: Text
   , lastCommitHash :: Text
   , lastRanMigration :: Maybe Int
   }
   deriving (Show, Generic)
 
-instance ToJSON Metadata where
+instance ToJSON MetadataResponse where
   toJSON m =
     A.object
       [ "app_version" .= m.appVersion

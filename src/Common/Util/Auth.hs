@@ -30,21 +30,12 @@ makeSecretKey = fromOctets
 generateToken :: JWK -> UserId -> IO Text
 generateToken key userId = do
   now <- getCurrentTime
-  let subText = T.pack (show (fromSqlKey userId))
-  let mSub = A.fromJSON (A.String subText) :: A.Result StringOrURI
-  let claims = case mSub of
-        A.Success sub ->
-          emptyClaimsSet
-            & claimSub ?~ sub
-            & claimIat ?~ NumericDate now
-            & claimExp ?~ NumericDate (addUTCTime (3600 * 24 * 7) now) -- 7 days
-        _ -> emptyClaimsSet
-
-  -- Use runExceptT to handle JWT errors
-  res <- runExceptT $ do
-    alg <- bestJWSAlg key :: ExceptT Error IO Alg
-    signClaims key (newJWSHeader ((), alg)) claims
-
+  let jwtSettings = defaultJWTSettings key
+  let expiry = Just (addUTCTime (3600 * 24 * 7) now) -- 7 days
+  
+  res <- makeJWT userId jwtSettings expiry
+  
   case res of
-    Left (_ :: Error) -> return ""
-    Right jwt -> return . TE.decodeUtf8 . BS.toStrict . encodeCompact $ jwt
+    Left _ -> return ""
+    Right jwt -> return . TE.decodeUtf8 . BS.toStrict $ jwt
+

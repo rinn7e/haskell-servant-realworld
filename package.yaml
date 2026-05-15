@@ -93,4 +93,4 @@ tests:
     dependencies:
       - haskell-servant-realworld
       - hspec
-      - hspec-servant
+

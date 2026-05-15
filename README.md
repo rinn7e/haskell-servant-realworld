@@ -18,13 +18,17 @@ A RealWorld Conduit API implementation using Haskell, Servant, Postgres, Persist
 ## Getting Started
 
 1.  **Clone the repository**.
-2.  **Set up the database**:
+2.  **Navigate to the backend directory**:
+    ```bash
+    cd backend
+    ```
+3.  **Set up the database**:
     Ensure you have a Postgres database named `realworld` running locally.
     You can customize the connection string in `.envrc` or `app/Main.hs`.
-3.  **Environment Variables**:
+4.  **Environment Variables**:
     This project uses `direnv`. Copy the sample environment variables:
     ```bash
-    cp .envrc.sample .envrc # If we had one, but we created it directly
+    cp .envrc.sample .envrc
     direnv allow
     ```
     Required variables:
@@ -35,7 +39,7 @@ A RealWorld Conduit API implementation using Haskell, Servant, Postgres, Persist
 
 ## Development Commands (Makefile)
 
-A `Makefile` is provided for common tasks:
+A `Makefile` is provided in the `backend` directory for common tasks:
 
 - `make build`: Fast build.
 - `make watch`: Build and watch for changes.

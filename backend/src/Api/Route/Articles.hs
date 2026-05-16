@@ -1,6 +1,5 @@
 module Api.Route.Articles where
 
-import Api.Util (toArticleResponse, toCommentResponse)
 import Data.Map.Append (unAppendMap)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
@@ -16,12 +15,12 @@ import Servant (Capture, Delete, GenericMode (type (:-)), Get, JSON, NamedRoutes
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Type.Article (Article (..), ArticleListResponse (..), ArticleResponse (..), NewArticleRequest (..), UpdateArticleRequest (..))
-import Api.Type.Comment (Comment (..), CommentListResponse (..), CommentResponse (..), NewCommentRequest (..))
-import Api.Type.Profile (Profile (..))
+import Entity.Article.Api (Article (..), ArticleListResponse (..), ArticleResponse (..), NewArticleRequest (..), UpdateArticleRequest (..), toArticleResponse)
+import Entity.Comment.Api (Comment (..), CommentListResponse (..), CommentResponse (..), NewCommentRequest (..), toCommentResponse)
+import Entity.Profile.Api (Profile (..))
 import Common.Type.App (App, AppEnv (..))
-import DB.Article.Query
-import DB.Comment.Query
+import Entity.Article.Query
+import Entity.Comment.Query
 import DB.Schema.Type (UserId)
 import DB.Schema.Type qualified as DB
 import DB.Util (runDB)

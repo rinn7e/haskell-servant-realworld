@@ -9,7 +9,7 @@ import Servant (GenericMode (type (:-)), Get, JSON, NamedRoutes)
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Type.Metadata (MetadataResponse (..))
+import Common.Type.Metadata (MetadataResponse (..))
 import Common.Type.App (App, AppEnv (..))
 import Common.Type.Config (Config (..))
 import DB.Migration (getLastRanMigration)

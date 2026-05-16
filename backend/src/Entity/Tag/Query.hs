@@ -1,4 +1,4 @@
-module DB.Tag.Query where
+module Entity.Tag.Query where
 
 import Data.Text (Text)
 import Database.Esqueleto.Experimental

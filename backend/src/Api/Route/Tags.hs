@@ -9,10 +9,10 @@ import Servant (GenericMode (type (:-)), Get, JSON, NamedRoutes, (:>))
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Type.Tag (TagListResponse (..))
+import Entity.Tag.Api (TagListResponse (..))
 import Common.Type.App (App, AppEnv (..))
 import DB.Schema.Type (UserId)
-import DB.Tag.Query (getTags)
+import Entity.Tag.Query (getTags)
 import DB.Util (runDB)
 
 data TagsRoutes mode = TagsRoutes

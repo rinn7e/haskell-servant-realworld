@@ -1,4 +1,4 @@
-module Api.Type.User where
+module Entity.User.Api where
 
 import Data.Aeson (FromJSON (..), ToJSON (..), (.:), (.:?))
 import Data.Aeson qualified as A
@@ -24,6 +24,25 @@ instance ToJSON User where
 -- UserResponse
 -------------------------------
 data UserResponse = UserResponse {user :: User} deriving (Show, Generic, ToJSON)
+
+-------------------------------
+-- Profile
+-------------------------------
+data Profile = Profile
+  { username :: Text
+  , bio :: Maybe Text
+  , image :: Maybe Text
+  , following :: Bool
+  }
+  deriving (Show, Generic)
+
+instance ToJSON Profile where
+  toJSON = A.genericToJSON A.defaultOptions
+
+-------------------------------
+-- ProfileResponse
+-------------------------------
+data ProfileResponse = ProfileResponse {profile :: Profile} deriving (Show, Generic, ToJSON)
 
 -------------------------------
 -- LoginUserRequest

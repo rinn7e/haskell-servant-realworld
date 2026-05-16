@@ -1,4 +1,4 @@
-module Api.Type.Metadata where
+module Common.Type.Metadata where
 
 import Data.Aeson (ToJSON (..))
 import Data.Aeson qualified as A

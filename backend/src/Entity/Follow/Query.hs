@@ -1,4 +1,4 @@
-module DB.Follow.Query where
+module Entity.Follow.Query where
 
 import Database.Esqueleto.Experimental
 import UnliftIO (MonadUnliftIO)

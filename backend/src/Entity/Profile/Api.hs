@@ -1,4 +1,4 @@
-module Api.Type.Profile where
+module Entity.Profile.Api where
 
 import Data.Aeson (ToJSON (..))
 import Data.Aeson qualified as A

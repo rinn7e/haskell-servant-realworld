@@ -11,12 +11,12 @@ import Servant (GenericMode (type (:-)), JSON, NamedRoutes, Post, PostCreated, R
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Type.User (LoginUserRequest (..), NewUserRequest (..), User (..), UserResponse (..))
+import Entity.User.Api (LoginUserRequest (..), NewUserRequest (..), User (..), UserResponse (..))
 import Common.Type.App (App, AppEnv (..))
-import Common.Util.Auth (generateToken)
+import Common.Type.JWK (generateToken)
 import DB.Schema.Type (UserId)
 import DB.Schema.Type qualified as DB
-import DB.User.Query (getUserByEmail)
+import Entity.User.Query (getUserByEmail)
 import DB.Util (runDB)
 
 data UsersRoutes mode = UsersRoutes

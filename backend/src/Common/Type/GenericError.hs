@@ -1,4 +1,4 @@
-module Api.Type.Common where
+module Common.Type.GenericError where
 
 import Data.Aeson qualified as A
 import Data.Aeson (ToJSON (..), (.=))

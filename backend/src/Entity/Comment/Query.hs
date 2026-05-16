@@ -1,4 +1,4 @@
-module DB.Comment.Query where
+module Entity.Comment.Query where
 
 import Database.Esqueleto.Experimental
 import UnliftIO (MonadUnliftIO)

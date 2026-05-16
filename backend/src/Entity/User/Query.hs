@@ -1,4 +1,4 @@
-module DB.User.Query where
+module Entity.User.Query where
 
 import Data.Text (Text)
 import Database.Esqueleto.Experimental

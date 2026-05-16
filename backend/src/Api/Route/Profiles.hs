@@ -11,12 +11,12 @@ import Servant (Capture, Delete, GenericMode (type (:-)), Get, JSON, NamedRoutes
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Type.Profile (Profile (..), ProfileResponse (..))
+import Entity.Profile.Api (Profile (..), ProfileResponse (..))
 import Common.Type.App (App, AppEnv (..))
-import DB.Follow.Query (isFollowing)
+import Entity.Follow.Query (isFollowing)
 import DB.Schema.Type (UserId)
 import DB.Schema.Type qualified as DB
-import DB.User.Query (getUserByUsername)
+import Entity.User.Query (getUserByUsername)
 import DB.Util (runDB)
 
 data ProfilesRoutes mode = ProfilesRoutes

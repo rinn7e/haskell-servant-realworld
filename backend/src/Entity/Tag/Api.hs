@@ -1,4 +1,4 @@
-module Api.Type.Tag where
+module Entity.Tag.Api where
 
 import Data.Aeson (ToJSON (..), (.=))
 import Data.Aeson qualified as A

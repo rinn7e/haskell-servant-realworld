@@ -1,4 +1,4 @@
-module Common.Util.Auth where
+module Common.Type.JWK where
 
 import Control.Lens
 import Control.Monad.Except (ExceptT, runExceptT, throwError)

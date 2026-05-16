@@ -2,7 +2,7 @@
 
 module AuthSpec (spec) where
 
-import Common.Util.Auth (generateToken, makeSecretKey)
+import Common.Type.JWK (generateToken, makeSecretKey)
 import DB.Schema.Type (UserId)
 import Data.ByteString.Char8 qualified as BSC
 import Data.Text.Encoding qualified as TE

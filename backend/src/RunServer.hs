@@ -1,6 +1,6 @@
-module App
+module RunServer
   ( AppEnv (..)
-  , server
+  , runServer
   ) where
 
 import Data.Proxy (Proxy (..))
@@ -20,8 +20,8 @@ import Api.User.Type (UserRoute)
 import Common.Type.App (AppEnv (..), runApp)
 import Type
 
-server :: AppEnv -> S.Server API
-server env auth =
+runServer :: AppEnv -> S.Server API
+runServer env auth =
   AppRoute
     { metadata =
         S.hoistServer (Proxy @(NamedRoutes MetadataRoute)) (runApp env) (metadataRoute auth)

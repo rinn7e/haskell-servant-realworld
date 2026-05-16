@@ -1,15 +1,16 @@
 module Entity.Comment.Query where
 
+import Data.Time (getCurrentTime)
 import Database.Esqueleto.Experimental
 import Database.Persist qualified as P
-import UnliftIO (MonadUnliftIO)
+import UnliftIO (MonadIO (..), MonadUnliftIO)
 
 import DB.Schema.Type
 import Entity.Comment.Api (NewCommentRequest (..))
 
-listComments
+getCommentsForArticle
   :: (MonadUnliftIO m) => ArticleId -> SqlPersistT m [(Entity Comment, Entity User)]
-listComments aid = fmap (map (\(c :& u) -> (c, u))) $ select $ listCommentsSQL aid
+getCommentsForArticle aid = fmap (map (\(c :& u) -> (c, u))) $ select $ listCommentsSQL aid
 
 listCommentsSQL
   :: ArticleId -> SqlQuery (SqlExpr (Entity Comment) :& SqlExpr (Entity User))
@@ -29,7 +30,8 @@ insertComment
   -> NewCommentRequest
   -> SqlPersistT m (Maybe (Entity Comment, Entity User))
 insertComment aid uid (NewCommentRequest body) = do
-  cid <- P.insert $ Comment body aid uid
+  now <- liftIO getCurrentTime
+  cid <- P.insert $ Comment body uid aid now now
   mComment <- P.get cid
   mAuthor <- P.get uid
   case (mComment, mAuthor) of

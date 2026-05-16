@@ -17,6 +17,7 @@ data AppEnv = AppEnv
   , appConfig :: Config
   }
 
+-- 'App' of the server
 type App = Eff '[Reader AppEnv, Error S.ServerError, IOE]
 
 runApp :: AppEnv -> App a -> S.Handler a

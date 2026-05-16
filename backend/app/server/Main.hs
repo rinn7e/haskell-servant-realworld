@@ -22,7 +22,7 @@ import Servant (Context (..))
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import App
+import RunServer (AppEnv (..), runServer)
 import Common.Type.Config (Config (..), loadConfig)
 import Common.Type.JWK (makeSecretKey)
 import DB.Migration
@@ -86,7 +86,7 @@ main = do
     logStdoutDev $
       corsMiddleware $
         authMiddleware $
-          S.serveWithContext api cfg (server (AppEnv pool jwtSettings jwtKey config))
+          S.serveWithContext api cfg (runServer (AppEnv pool jwtSettings jwtKey config))
 
 api :: Proxy API
 api = Proxy

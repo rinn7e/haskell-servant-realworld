@@ -1,7 +1,7 @@
 module Type
   ( API
   , AppApi
-  , AppRoutes (..)
+  , AppRoute (..)
   ) where
 
 import GHC.Generics (Generic)

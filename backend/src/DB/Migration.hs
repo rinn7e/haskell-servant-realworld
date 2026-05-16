@@ -21,7 +21,7 @@ getPendingMigrations :: SqlPersistT IO [String]
 getPendingMigrations = do
   ensureMigrationsTable
   applied <- getAppliedMigrations
-  files <- liftIO $ listDirectory "migration"
+  files <- liftIO $ listDirectory "resource/migration"
   let ups = sort [f | f <- files, takeExtension f == ".sql", ".up.sql" `isSuffixOf` f]
   return [f | f <- ups, read (take 3 f) `notElem` applied]
 
@@ -29,14 +29,14 @@ runMigrationsUp :: SqlPersistT IO ()
 runMigrationsUp = do
   ensureMigrationsTable
   applied <- getAppliedMigrations
-  files <- liftIO $ listDirectory "migration"
+  files <- liftIO $ listDirectory "resource/migration"
   let ups = sort [f | f <- files, takeExtension f == ".sql", ".up.sql" `isSuffixOf` f]
 
   forM_ ups $ \f -> do
     let version = read (take 3 f) :: Int
     when (version `notElem` applied) $ do
       liftIO $ putStrLn $ "Applying migration: " ++ f
-      content <- liftIO $ BS.readFile ("migration" </> f)
+      content <- liftIO $ BS.readFile ("resource/migration" </> f)
       rawExecute (TE.decodeUtf8 content) []
       rawExecute "INSERT INTO schema_migrations (version) VALUES (?)" [toPersistValue version]
 
@@ -46,12 +46,12 @@ runMigrationsDown = do
   case reverse applied of
     [] -> liftIO $ putStrLn "No migrations to roll back."
     (v : _) -> do
-      files <- liftIO $ listDirectory "migration"
+      files <- liftIO $ listDirectory "resource/migration"
       let downFile = case [file | file <- files, take 3 file == printf "%03d" v, ".down.sql" `isSuffixOf` file] of
             (f : _) -> f
             [] -> error $ "Down migration not found for version " ++ show v
       liftIO $ putStrLn $ "Rolling back migration: " ++ downFile
-      content <- liftIO $ BS.readFile ("migration" </> downFile)
+      content <- liftIO $ BS.readFile ("resource/migration" </> downFile)
       rawExecute (TE.decodeUtf8 content) []
       rawExecute "DELETE FROM schema_migrations WHERE version = ?" [toPersistValue v]
 
@@ -78,14 +78,14 @@ generateMigration name = do
   if null statements
     then liftIO $ putStrLn "No changes detected in schema."
     else do
-      liftIO $ createDirectoryIfMissing True "migration"
-      files <- liftIO $ listDirectory "migration"
+      liftIO $ createDirectoryIfMissing True "resource/migration"
+      files <- liftIO $ listDirectory "resource/migration"
       let versions = [read (take 3 f) :: Int | f <- files, takeExtension f == ".sql"]
       let nextVersion = if null versions then 1 else maximum versions + 1
       let baseName = printf "%03d_%s" nextVersion name
 
-      let upFile = "migration" </> baseName ++ ".up.sql"
-      let downFile = "migration" </> baseName ++ ".down.sql"
+      let upFile = "resource/migration" </> baseName ++ ".up.sql"
+      let downFile = "resource/migration" </> baseName ++ ".down.sql"
 
       liftIO $ do
         putStrLn $ "Generating: " ++ upFile

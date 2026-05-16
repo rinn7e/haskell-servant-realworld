@@ -25,7 +25,7 @@ resetdb:
 
 # Populate database with seed data
 seed:
-	psql "$(DB_CONN)" -f seed.sql
+	psql "$(DB_CONN)" -f resource/seed.sql
 
 # Generate a new migration (Usage: make migrate-generate NAME=add_users)
 migrate-generate:

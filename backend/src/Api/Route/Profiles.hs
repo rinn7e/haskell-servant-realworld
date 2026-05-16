@@ -11,7 +11,7 @@ import Servant (Capture, Delete, GenericMode (type (:-)), Get, JSON, NamedRoutes
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Type (Profile (..), ProfileResponse (..))
+import Api.Type.Profile (Profile (..), ProfileResponse (..))
 import Common.Type.App (App, AppEnv (..))
 import DB.Follow.Query (isFollowing)
 import DB.Schema.Type (UserId)

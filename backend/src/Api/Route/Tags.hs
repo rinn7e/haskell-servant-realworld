@@ -9,7 +9,7 @@ import Servant (GenericMode (type (:-)), Get, JSON, NamedRoutes, (:>))
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Type (TagListResponse (..))
+import Api.Type.Tag (TagListResponse (..))
 import Common.Type.App (App, AppEnv (..))
 import DB.Schema.Type (UserId)
 import DB.Tag.Query (getTags)

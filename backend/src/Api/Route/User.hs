@@ -11,7 +11,7 @@ import Servant (GenericMode (type (:-)), Get, JSON, NamedRoutes, Put, ReqBody, (
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Type (UpdateUserRequest (..), User (..), UserResponse (..))
+import Api.Type.User (UpdateUserRequest (..), User (..), UserResponse (..))
 import Common.Type.App (App, AppEnv (..))
 import Common.Util.Auth (generateToken)
 import DB.Schema.Type (UserId)

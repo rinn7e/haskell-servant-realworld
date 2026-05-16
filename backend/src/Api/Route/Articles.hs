@@ -16,7 +16,9 @@ import Servant (Capture, Delete, GenericMode (type (:-)), Get, JSON, NamedRoutes
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Type (Article (..), ArticleListResponse (..), ArticleResponse (..), Comment (..), CommentListResponse (..), CommentResponse (..), NewArticleRequest (..), NewCommentRequest (..), Profile (..), UpdateArticleRequest (..))
+import Api.Type.Article (Article (..), ArticleListResponse (..), ArticleResponse (..), NewArticleRequest (..), UpdateArticleRequest (..))
+import Api.Type.Comment (Comment (..), CommentListResponse (..), CommentResponse (..), NewCommentRequest (..))
+import Api.Type.Profile (Profile (..))
 import Common.Type.App (App, AppEnv (..))
 import DB.Article.Query
 import DB.Comment.Query

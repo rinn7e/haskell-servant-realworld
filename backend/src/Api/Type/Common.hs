@@ -1,0 +1,16 @@
+module Api.Type.Common where
+
+import Data.Aeson qualified as A
+import Data.Aeson (ToJSON (..), (.=))
+import GHC.Generics (Generic)
+
+-------------------------------
+-- GenericErrorResponse
+-------------------------------
+data GenericErrorResponse = GenericErrorResponse
+  { errors :: A.Object
+  }
+  deriving (Show, Generic)
+
+instance ToJSON GenericErrorResponse where
+  toJSON (GenericErrorResponse errs) = A.object ["errors" .= errs]

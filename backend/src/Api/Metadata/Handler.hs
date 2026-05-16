@@ -16,8 +16,8 @@ import DB.Util (runDB)
 import Effectful.Reader.Static (ask)
 import Paths_haskell_servant_realworld qualified as Paths
 
-metadataServer :: S.AuthResult UserId -> S.ServerT (NamedRoutes MetadataRoute) App
-metadataServer _auth =
+metadataRoute :: S.AuthResult UserId -> S.ServerT (NamedRoutes MetadataRoute) App
+metadataRoute _auth =
   MetadataRoute
     { getMetadata = getMetadataHandler
     }

@@ -44,8 +44,8 @@ import Entity.Comment.Api
   )
 import Entity.Comment.Query
 
-articlesServer :: S.AuthResult UserId -> S.ServerT (NamedRoutes ArticleRoute) App
-articlesServer auth =
+articleRoute :: S.AuthResult UserId -> S.ServerT (NamedRoutes ArticleRoute) App
+articleRoute auth =
   ArticleRoute
     { getArticleFeed = getArticleFeedHandler auth
     , getArticleList = getArticleListHandler auth

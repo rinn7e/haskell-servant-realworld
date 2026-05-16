@@ -30,8 +30,8 @@ import Entity.User.Api
   )
 import Entity.User.Query (getUserByEmail)
 
-authServer :: S.AuthResult UserId -> S.ServerT (NamedRoutes AuthRoute) App
-authServer auth =
+authRoute :: S.AuthResult UserId -> S.ServerT (NamedRoutes AuthRoute) App
+authRoute auth =
   AuthRoute
     { loginUser = loginUserHandler auth
     , registerUser = registerUserHandler auth

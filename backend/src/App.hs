@@ -13,8 +13,6 @@ import Api.Auth.Handler (authServer)
 import Api.Auth.Type (AuthRoutes)
 import Api.Metadata.Handler (metadataServer)
 import Api.Metadata.Type (MetadataRoutes)
-import Api.Profile.Handler (profilesServer)
-import Api.Profile.Type (ProfilesRoutes)
 import Api.Tag.Handler (tagsServer)
 import Api.Tag.Type (TagsRoutes)
 import Api.User.Handler (userServer)
@@ -29,8 +27,6 @@ server env auth =
         S.hoistServer (Proxy @(NamedRoutes MetadataRoutes)) (runApp env) (metadataServer auth)
     , auth = S.hoistServer (Proxy @(NamedRoutes AuthRoutes)) (runApp env) (authServer auth)
     , user = S.hoistServer (Proxy @(NamedRoutes UserRoutes)) (runApp env) (userServer auth)
-    , profiles =
-        S.hoistServer (Proxy @(NamedRoutes ProfilesRoutes)) (runApp env) (profilesServer auth)
     , articles =
         S.hoistServer (Proxy @(NamedRoutes ArticlesRoutes)) (runApp env) (articlesServer auth)
     , tags = S.hoistServer (Proxy @(NamedRoutes TagsRoutes)) (runApp env) (tagsServer auth)

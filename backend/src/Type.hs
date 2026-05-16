@@ -12,7 +12,6 @@ import Servant.Auth.Server qualified as S
 import Api.Article.Type (ArticlesRoutes)
 import Api.Auth.Type (AuthRoutes)
 import Api.Metadata.Type (MetadataRoutes)
-import Api.Profile.Type (ProfilesRoutes)
 import Api.Tag.Type (TagsRoutes)
 import Api.User.Type (UserRoutes)
 import DB.Schema.Type (UserId)
@@ -23,7 +22,6 @@ data AppRoutes mode = AppRoutes
   { metadata :: mode :- NamedRoutes MetadataRoutes
   , auth :: mode :- NamedRoutes AuthRoutes
   , user :: mode :- NamedRoutes UserRoutes
-  , profiles :: mode :- NamedRoutes ProfilesRoutes
   , articles :: mode :- NamedRoutes ArticlesRoutes
   , tags :: mode :- NamedRoutes TagsRoutes
   }

@@ -39,7 +39,8 @@ getArticleWithAuthor mCurrentUserId slug = do
 -- | Main query to fetch an article with its author, tags, and metadata
 getArticleWithAuthorSQL
   :: Maybe UserId
-  -> Text -> SqlQuery ArticleExpr
+  -> Text
+  -> SqlQuery ArticleExpr
 getArticleWithAuthorSQL mCurrentUserId slug = do
   (((article :& author) :& articleTag) :& tag) <-
     from $
@@ -82,7 +83,8 @@ listArticlesSQL
   -> Maybe Text
   -> Maybe Text
   -> Int
-  -> Int -> SqlQuery ArticleExpr
+  -> Int
+  -> SqlQuery ArticleExpr
 listArticlesSQL mCurrentUserId mTag mAuthor mFavorited lim off = do
   (((article :& author) :& articleTag) :& tag) <-
     from $
@@ -116,7 +118,8 @@ listFeed currentUserId lim off = do
 listFeedSQL
   :: UserId
   -> Int
-  -> Int -> SqlQuery ArticleExpr
+  -> Int
+  -> SqlQuery ArticleExpr
 listFeedSQL currentUserId lim off = do
   (((article :& author) :& articleTag) :& tag) <-
     from $
@@ -136,8 +139,9 @@ listFeedSQL currentUserId lim off = do
     , isFollowingUserExpr (author ^. UserId) (val currentUserId)
     )
 
--- | Helper to apply article filters (by author, tag, and favorited user) to a query.
--- Extracted from filterArticlesIdsSQL to be reused by countArticles.
+{- | Helper to apply article filters (by author, tag, and favorited user) to a query.
+Extracted from filterArticlesIdsSQL to be reused by countArticles.
+-}
 applyArticleFilters
   :: Maybe Text
   -> Maybe Text
@@ -182,8 +186,9 @@ filterArticlesIdsSQL mTag mAuthor mFavorited lim off = do
   when (off > 0) $ offset (fromIntegral off)
   return (article ^. ArticleId)
 
--- | Count total articles matching filters, ignoring pagination limits.
--- Used to return the total count in the API response.
+{- | Count total articles matching filters, ignoring pagination limits.
+Used to return the total count in the API response.
+-}
 countArticles :: (MonadUnliftIO m) => Maybe Text -> Maybe Text -> Maybe Text -> SqlPersistT m Int
 countArticles mTag mAuthor mFavorited = do
   res <- select $ do

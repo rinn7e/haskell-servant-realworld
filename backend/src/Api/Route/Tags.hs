@@ -11,8 +11,8 @@ import Servant.Auth.Server qualified as S
 
 import Api.Type (TagListResponse (..))
 import Common.Type.App (App, AppEnv (..))
-import DB.Tag.Query (getTags)
 import DB.Schema.Type (UserId)
+import DB.Tag.Query (getTags)
 import DB.Util (runDB)
 
 data TagsRoutes mode = TagsRoutes

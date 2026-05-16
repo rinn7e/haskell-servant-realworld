@@ -14,9 +14,9 @@ import Servant.Auth.Server qualified as S
 import Api.Type (Profile (..), ProfileResponse (..))
 import Common.Type.App (App, AppEnv (..))
 import DB.Follow.Query (isFollowing)
-import DB.User.Query (getUserByUsername)
 import DB.Schema.Type (UserId)
 import DB.Schema.Type qualified as DB
+import DB.User.Query (getUserByUsername)
 import DB.Util (runDB)
 
 data ProfilesRoutes mode = ProfilesRoutes

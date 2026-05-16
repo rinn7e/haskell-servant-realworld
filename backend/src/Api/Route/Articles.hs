@@ -266,4 +266,3 @@ unfavoriteHandler (S.Authenticated uid) slug = do
         Just grouped -> return $ ArticleResponse $ toArticleResponse grouped
         Nothing -> throwError S.err500
 unfavoriteHandler _ _ = throwError S.err401
-

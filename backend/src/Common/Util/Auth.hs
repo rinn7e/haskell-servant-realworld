@@ -32,10 +32,8 @@ generateToken key userId = do
   now <- getCurrentTime
   let jwtSettings = defaultJWTSettings key
   let expiry = Just (addUTCTime (3600 * 24 * 7) now) -- 7 days
-  
   res <- makeJWT userId jwtSettings expiry
-  
+
   case res of
     Left _ -> return ""
     Right jwt -> return . TE.decodeUtf8 . BS.toStrict $ jwt
-

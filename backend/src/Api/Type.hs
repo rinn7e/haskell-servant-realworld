@@ -24,7 +24,7 @@ instance ToJSON User where
 -------------------------------
 -- UserResponse
 -------------------------------
-data UserResponse = UserResponse { user :: User } deriving (Show, Generic, ToJSON)
+data UserResponse = UserResponse {user :: User} deriving (Show, Generic, ToJSON)
 
 -------------------------------
 -- LoginUserRequest
@@ -94,7 +94,7 @@ instance ToJSON Profile where
 -------------------------------
 -- ProfileResponse
 -------------------------------
-data ProfileResponse = ProfileResponse { profile :: Profile } deriving (Show, Generic, ToJSON)
+data ProfileResponse = ProfileResponse {profile :: Profile} deriving (Show, Generic, ToJSON)
 
 -------------------------------
 -- Article
@@ -119,7 +119,7 @@ instance ToJSON Article where
 -------------------------------
 -- ArticleResponse
 -------------------------------
-data ArticleResponse = ArticleResponse { article :: Article } deriving (Show, Generic, ToJSON)
+data ArticleResponse = ArticleResponse {article :: Article} deriving (Show, Generic, ToJSON)
 
 -------------------------------
 -- ArticleListResponse
@@ -195,7 +195,7 @@ instance ToJSON Comment where
 -------------------------------
 -- CommentResponse
 -------------------------------
-data CommentResponse = CommentResponse { comment :: Comment } deriving (Show, Generic, ToJSON)
+data CommentResponse = CommentResponse {comment :: Comment} deriving (Show, Generic, ToJSON)
 
 -------------------------------
 -- CommentListResponse
@@ -255,4 +255,3 @@ data MetadataResponse = MetadataResponse
 
 instance ToJSON MetadataResponse where
   toJSON = A.genericToJSON A.defaultOptions
-

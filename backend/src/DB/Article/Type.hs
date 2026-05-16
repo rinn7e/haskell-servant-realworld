@@ -9,7 +9,6 @@ import Database.Esqueleto.Experimental
 
 import DB.Schema.Type
 
-
 -- | SQL expression level (internal Esqueleto query)
 type ArticleExpr =
   ( SqlExpr (Entity Article)
@@ -51,7 +50,8 @@ mkArticleGrouped (art, auth, mTag, Value favCount, Value isFav, Value isFol) =
       , case mTag of
           Just t -> AppendMap $ Map.singleton t.entityKey (First t)
           Nothing -> AppendMap Map.empty
-      , ( First favCount
+      ,
+        ( First favCount
         , First isFav
         , First isFol
         )

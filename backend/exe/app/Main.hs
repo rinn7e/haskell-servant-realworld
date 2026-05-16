@@ -71,7 +71,7 @@ main = do
       port = config.port
 
   let corsMiddleware = if config.allowCorsEnabled then allowCors else id
-  
+
   putStrLn $ "Starting server on port " ++ show port
   run port $ logStdoutDev $ corsMiddleware $ authMiddleware $ S.serveWithContext api cfg (server (AppEnv pool jwtSettings jwtKey config))
 
@@ -89,16 +89,17 @@ authMiddleware app req sendResponse =
    in app req{requestHeaders = newHeaders} sendResponse
 
 appCorsResourcePolicy :: CorsResourcePolicy
-appCorsResourcePolicy = CorsResourcePolicy {
-    corsOrigins        = Nothing
-  , corsMethods        = ["OPTIONS", "GET", "PUT", "POST", "DELETE"]
-  , corsRequestHeaders = ["Authorization", "Content-Type"]
-  , corsExposedHeaders = Nothing
-  , corsMaxAge         = Nothing
-  , corsVaryOrigin     = False
-  , corsRequireOrigin  = False
-  , corsIgnoreFailures = False
-}
+appCorsResourcePolicy =
+  CorsResourcePolicy
+    { corsOrigins = Nothing
+    , corsMethods = ["OPTIONS", "GET", "PUT", "POST", "DELETE"]
+    , corsRequestHeaders = ["Authorization", "Content-Type"]
+    , corsExposedHeaders = Nothing
+    , corsMaxAge = Nothing
+    , corsVaryOrigin = False
+    , corsRequireOrigin = False
+    , corsIgnoreFailures = False
+    }
 
 allowCors :: Middleware
 allowCors = cors (const $ Just appCorsResourcePolicy)

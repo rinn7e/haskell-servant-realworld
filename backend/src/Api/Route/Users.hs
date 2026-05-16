@@ -14,9 +14,9 @@ import Servant.Auth.Server qualified as S
 import Api.Type (LoginUserRequest (..), NewUserRequest (..), User (..), UserResponse (..))
 import Common.Type.App (App, AppEnv (..))
 import Common.Util.Auth (generateToken)
-import DB.User.Query (getUserByEmail)
 import DB.Schema.Type (UserId)
 import DB.Schema.Type qualified as DB
+import DB.User.Query (getUserByEmail)
 import DB.Util (runDB)
 
 data UsersRoutes mode = UsersRoutes

@@ -76,13 +76,13 @@ library:
 executables:
   haskell-servant-realworld-exe:
     main: Main.hs
-    source-dirs: app
+    source-dirs: exe/app
     dependencies:
       - haskell-servant-realworld
 
   migrate-exe:
     main: Main.hs
-    source-dirs: migrate
+    source-dirs: exe/migrate
     dependencies:
       - haskell-servant-realworld
 

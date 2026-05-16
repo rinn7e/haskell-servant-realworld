@@ -4,7 +4,24 @@ import Control.Lens
 import Control.Monad.Except (ExceptT, runExceptT, throwError)
 import Control.Monad.IO.Class (liftIO)
 import Crypto.JOSE.JWS (Alg)
-import Crypto.JWT (ClaimsSet, Error, JWK, JWS, JWSHeader, NumericDate (..), StringOrURI, bestJWSAlg, claimExp, claimIat, claimSub, emptyClaimsSet, encodeCompact, fromOctets, newJWSHeader, signClaims)
+import Crypto.JWT
+  ( ClaimsSet
+  , Error
+  , JWK
+  , JWS
+  , JWSHeader
+  , NumericDate (..)
+  , StringOrURI
+  , bestJWSAlg
+  , claimExp
+  , claimIat
+  , claimSub
+  , emptyClaimsSet
+  , encodeCompact
+  , fromOctets
+  , newJWSHeader
+  , signClaims
+  )
 import Crypto.Random.Entropy qualified as Entropy
 import Crypto.Random.Types (MonadRandom (..))
 import Data.Aeson (FromJSON, ToJSON, toJSON)

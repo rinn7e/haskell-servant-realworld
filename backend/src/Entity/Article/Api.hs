@@ -19,9 +19,9 @@ import Data.Time (UTCTime)
 import Database.Persist.Sql (Entity (..))
 import GHC.Generics (Generic)
 
-import Entity.Article.Type (ArticleGrouped)
-import Entity.Profile.Api (Profile (..))
 import DB.Schema.Type qualified as DB
+import Entity.Article.Type (ArticleGrouped)
+import Entity.User.Api (Profile (..))
 
 -------------------------------
 -- Article
@@ -46,7 +46,8 @@ instance ToJSON Article where
 -------------------------------
 -- ArticleResponse
 -------------------------------
-data ArticleResponse = ArticleResponse {article :: Article} deriving (Show, Generic, ToJSON)
+data ArticleResponse = ArticleResponse {article :: Article}
+  deriving (Show, Generic, ToJSON)
 
 -------------------------------
 -- ArticleListResponse
@@ -109,7 +110,22 @@ instance FromJSON UpdateArticleRequest where
 -------------------------------
 
 toArticleResponse :: ArticleGrouped -> Article
-toArticleResponse (First (Entity _ (art :: DB.Article)), First (Entity _ (author :: DB.User)), tagsMap, (First favCount, First isFav, First isFol)) =
-  let tags = map (\(First t) -> t.entityVal.name) $ Map.elems $ unAppendMap tagsMap
-      profile = Profile author.username author.bio author.image isFol
-   in Article art.slug art.title art.description art.body tags art.createdAt art.updatedAt isFav (fromMaybe 0 favCount) profile
+toArticleResponse
+  ( First (Entity _ (art :: DB.Article))
+    , First (Entity _ (author :: DB.User))
+    , tagsMap
+    , (First favCount, First isFav, First isFol)
+    ) =
+    let tags = map (\(First t) -> t.entityVal.name) $ Map.elems $ unAppendMap tagsMap
+        profile = Profile author.username author.bio author.image isFol
+     in Article
+          art.slug
+          art.title
+          art.description
+          art.body
+          tags
+          art.createdAt
+          art.updatedAt
+          isFav
+          (fromMaybe 0 favCount)
+          profile

@@ -31,7 +31,8 @@ loadConfig = do
   return
     Config
       { dbConnStr = maybe defaultConnStr BSC.pack dbConn
-      , jwtSecret = maybe (BSL.fromStrict defaultJwtSecret) (BSL.fromStrict . TE.encodeUtf8 . T.pack) jwtSec
+      , jwtSecret =
+          maybe (BSL.fromStrict defaultJwtSecret) (BSL.fromStrict . TE.encodeUtf8 . T.pack) jwtSec
       , shouldRunMigrationAuto = runMig == Just "true"
       , gitCommitHash = T.pack (maybe "unknown" id commit)
       , port = maybe 3000 read (portStr >>= \s -> if null s then Nothing else Just s)

@@ -12,7 +12,11 @@ import Database.Persist.Postgresql (createPostgresqlPool)
 import Database.Persist.Sql (getMigration, runSqlPool)
 import Network.Wai (Middleware, Request (..))
 import Network.Wai.Handler.Warp (run)
-import Network.Wai.Middleware.Cors (CorsResourcePolicy (..), cors, simpleCorsResourcePolicy)
+import Network.Wai.Middleware.Cors
+  ( CorsResourcePolicy (..)
+  , cors
+  , simpleCorsResourcePolicy
+  )
 import Network.Wai.Middleware.RequestLogger (logStdoutDev)
 import Servant (Context (..))
 import Servant qualified as S
@@ -20,8 +24,13 @@ import Servant.Auth.Server qualified as S
 
 import App
 import Common.Type.Config (Config (..), loadConfig)
-import Common.Util.Auth (makeSecretKey)
-import DB.Migration (generateMigration, getPendingMigrations, runMigrationsDown, runMigrationsUp)
+import Common.Type.JWK (makeSecretKey)
+import DB.Migration
+  ( generateMigration
+  , getPendingMigrations
+  , runMigrationsDown
+  , runMigrationsUp
+  )
 import DB.Schema.Type (migrateAll)
 import Type
 
@@ -73,7 +82,11 @@ main = do
   let corsMiddleware = if config.allowCorsEnabled then allowCors else id
 
   putStrLn $ "Starting server on port " ++ show port
-  run port $ logStdoutDev $ corsMiddleware $ authMiddleware $ S.serveWithContext api cfg (server (AppEnv pool jwtSettings jwtKey config))
+  run port $
+    logStdoutDev $
+      corsMiddleware $
+        authMiddleware $
+          S.serveWithContext api cfg (server (AppEnv pool jwtSettings jwtKey config))
 
 api :: Proxy API
 api = Proxy
@@ -84,7 +97,8 @@ authMiddleware app req sendResponse =
       newHeaders = case lookup "Authorization" headers of
         Just auth
           | "Token " `BS.isPrefixOf` auth ->
-              ("Authorization", "Bearer " <> BS.drop 6 auth) : filter ((/= "Authorization") . fst) headers
+              ("Authorization", "Bearer " <> BS.drop 6 auth)
+                : filter ((/= "Authorization") . fst) headers
         _ -> headers
    in app req{requestHeaders = newHeaders} sendResponse
 

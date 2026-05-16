@@ -18,7 +18,7 @@ import Common.Type.App (AppEnv)
 import DB.Schema.Type (UserId)
 import DB.Schema.Type qualified as DB
 import Entity.Follow.Query (isFollowing)
-import Entity.Profile.Api (Profile (..))
+import Entity.User.Api (Profile (..))
 
 -------------------------------
 -- Comment
@@ -38,7 +38,8 @@ instance ToJSON Comment where
 -------------------------------
 -- CommentResponse
 -------------------------------
-data CommentResponse = CommentResponse {comment :: Comment} deriving (Show, Generic, ToJSON)
+data CommentResponse = CommentResponse {comment :: Comment}
+  deriving (Show, Generic, ToJSON)
 
 -------------------------------
 -- CommentListResponse
@@ -68,11 +69,13 @@ instance FromJSON NewCommentRequest where
 -- Helpers
 -------------------------------
 
-toCommentResponse :: AppEnv -> Maybe UserId -> (Entity DB.Comment, Entity DB.User) -> SqlPersistT IO Comment
+toCommentResponse
+  :: AppEnv -> Maybe UserId -> (Entity DB.Comment, Entity DB.User) -> SqlPersistT IO Comment
 toCommentResponse _ mCurrentUserId (Entity cid comm, Entity _ author) = do
   isFol <- case mCurrentUserId of
     Just uid -> isFollowing uid comm.authorId
     Nothing -> return False
 
   let profile = Profile author.username author.bio author.image isFol
-  return $ Comment (fromIntegral (fromSqlKey cid)) comm.createdAt comm.updatedAt comm.body profile
+  return $
+    Comment (fromIntegral (fromSqlKey cid)) comm.createdAt comm.updatedAt comm.body profile

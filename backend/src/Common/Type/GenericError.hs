@@ -1,7 +1,7 @@
 module Common.Type.GenericError where
 
-import Data.Aeson qualified as A
 import Data.Aeson (ToJSON (..), (.=))
+import Data.Aeson qualified as A
 import GHC.Generics (Generic)
 
 -------------------------------

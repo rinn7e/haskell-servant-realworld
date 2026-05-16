@@ -1,0 +1,23 @@
+module Api.Tag.Handler where
+
+import Servant (NamedRoutes)
+import Servant qualified as S
+import Servant.Auth.Server qualified as S
+
+import Api.Tag.Type
+import Common.Type.App (App)
+import DB.Schema.Type (UserId)
+import DB.Util (runDB)
+import Entity.Tag.Api (TagListResponse (..))
+import Entity.Tag.Query (getTags)
+
+tagsServer :: S.AuthResult UserId -> S.ServerT (NamedRoutes TagsRoutes) App
+tagsServer _auth =
+  TagsRoutes
+    { tags = getTagsHandler
+    }
+
+getTagsHandler :: App TagListResponse
+getTagsHandler = do
+  tags <- runDB getTags
+  return $ TagListResponse tags

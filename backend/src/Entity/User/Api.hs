@@ -42,7 +42,8 @@ instance ToJSON Profile where
 -------------------------------
 -- ProfileResponse
 -------------------------------
-data ProfileResponse = ProfileResponse {profile :: Profile} deriving (Show, Generic, ToJSON)
+data ProfileResponse = ProfileResponse {profile :: Profile}
+  deriving (Show, Generic, ToJSON)
 
 -------------------------------
 -- LoginUserRequest

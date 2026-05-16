@@ -1,4 +1,12 @@
-module DB.Migration (runMigrationsUp, runMigrationsDown, ensureMigrationsTable, getAppliedMigrations, getLastRanMigration, generateMigration, getPendingMigrations) where
+module DB.Migration
+  ( runMigrationsUp
+  , runMigrationsDown
+  , ensureMigrationsTable
+  , getAppliedMigrations
+  , getLastRanMigration
+  , generateMigration
+  , getPendingMigrations
+  ) where
 
 import Control.Monad (forM_, when)
 import Control.Monad.IO.Class (liftIO)
@@ -57,7 +65,9 @@ runMigrationsDown = do
 
 ensureMigrationsTable :: SqlPersistT IO ()
 ensureMigrationsTable = do
-  rawExecute "CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP)" []
+  rawExecute
+    "CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP)"
+    []
 
 getAppliedMigrations :: SqlPersistT IO [Int]
 getAppliedMigrations = do

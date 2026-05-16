@@ -13,9 +13,9 @@ import Database.Esqueleto.Experimental
 import Debug.Trace (traceM)
 import UnliftIO (MonadUnliftIO)
 
+import DB.Schema.Type
 import Entity.Article.Type
 import Entity.Follow.Query (isFollowing)
-import DB.Schema.Type
 
 getArticleBySlug :: (MonadUnliftIO m) => Text -> SqlPersistT m (Maybe (Entity Article))
 getArticleBySlug slug = selectOne $ getArticleBySlugSQL slug
@@ -27,7 +27,8 @@ getArticleBySlugSQL slug = do
   where_ (article ^. ArticleSlug ==. val slug)
   return article
 
-getArticleWithAuthor :: (MonadUnliftIO m) => Maybe UserId -> Text -> SqlPersistT m (Maybe ArticleGrouped)
+getArticleWithAuthor
+  :: (MonadUnliftIO m) => Maybe UserId -> Text -> SqlPersistT m (Maybe ArticleGrouped)
 getArticleWithAuthor mCurrentUserId slug = do
   result <- select $ getArticleWithAuthorSQL mCurrentUserId slug
   traceM $ "getArticleWithAuthor result length: " ++ show (length result)
@@ -46,7 +47,8 @@ getArticleWithAuthorSQL mCurrentUserId slug = do
     from $
       table @Article
         `innerJoin` table @User `on` (\(art :& auth) -> art ^. ArticleAuthorId ==. auth ^. UserId)
-        `leftJoin` table @ArticleTag `on` (\(art :& _ :& at) -> just (art ^. ArticleId) ==. at ?. ArticleTagArticleId)
+        `leftJoin` table @ArticleTag
+          `on` (\(art :& _ :& at) -> just (art ^. ArticleId) ==. at ?. ArticleTagArticleId)
         `leftJoin` table @Tag `on` (\(_ :& _ :& at :& t) -> at ?. ArticleTagTagId ==. t ?. TagId)
   where_ (article ^. ArticleSlug ==. val slug)
 
@@ -90,10 +92,15 @@ listArticlesSQL mCurrentUserId mTag mAuthor mFavorited lim off = do
     from $
       table @Article
         `innerJoin` table @User `on` (\(art :& auth) -> art ^. ArticleAuthorId ==. auth ^. UserId)
-        `leftJoin` table @ArticleTag `on` (\(art :& _ :& at) -> just (art ^. ArticleId) ==. at ?. ArticleTagArticleId)
+        `leftJoin` table @ArticleTag
+          `on` (\(art :& _ :& at) -> just (art ^. ArticleId) ==. at ?. ArticleTagArticleId)
         `leftJoin` table @Tag `on` (\(_ :& _ :& at :& t) -> at ?. ArticleTagTagId ==. t ?. TagId)
 
-  where_ (article ^. ArticleId `in_` subList_select (filterArticlesIdsSQL mTag mAuthor mFavorited lim off))
+  where_
+    ( article
+        ^. ArticleId
+        `in_` subList_select (filterArticlesIdsSQL mTag mAuthor mFavorited lim off)
+    )
 
   return
     ( article
@@ -108,7 +115,12 @@ listArticlesSQL mCurrentUserId mTag mAuthor mFavorited lim off = do
         Nothing -> val False
     )
 
-listFeed :: (MonadUnliftIO m) => UserId -> Int -> Int -> SqlPersistT m (AppendMap (Down UTCTime, ArticleId) ArticleGrouped)
+listFeed
+  :: (MonadUnliftIO m)
+  => UserId
+  -> Int
+  -> Int
+  -> SqlPersistT m (AppendMap (Down UTCTime, ArticleId) ArticleGrouped)
 listFeed currentUserId lim off = do
   result <- select $ listFeedSQL currentUserId lim off
   traceM $ "listFeed result length: " ++ show (length result)
@@ -125,10 +137,12 @@ listFeedSQL currentUserId lim off = do
     from $
       table @Article
         `innerJoin` table @User `on` (\(art :& auth) -> art ^. ArticleAuthorId ==. auth ^. UserId)
-        `leftJoin` table @ArticleTag `on` (\(art :& _ :& at) -> just (art ^. ArticleId) ==. at ?. ArticleTagArticleId)
+        `leftJoin` table @ArticleTag
+          `on` (\(art :& _ :& at) -> just (art ^. ArticleId) ==. at ?. ArticleTagArticleId)
         `leftJoin` table @Tag `on` (\(_ :& _ :& at :& t) -> at ?. ArticleTagTagId ==. t ?. TagId)
 
-  where_ (article ^. ArticleId `in_` subList_select (feedArticlesIdsSQL currentUserId lim off))
+  where_
+    (article ^. ArticleId `in_` subList_select (feedArticlesIdsSQL currentUserId lim off))
 
   return
     ( article
@@ -189,7 +203,8 @@ filterArticlesIdsSQL mTag mAuthor mFavorited lim off = do
 {- | Count total articles matching filters, ignoring pagination limits.
 Used to return the total count in the API response.
 -}
-countArticles :: (MonadUnliftIO m) => Maybe Text -> Maybe Text -> Maybe Text -> SqlPersistT m Int
+countArticles
+  :: (MonadUnliftIO m) => Maybe Text -> Maybe Text -> Maybe Text -> SqlPersistT m Int
 countArticles mTag mAuthor mFavorited = do
   res <- select $ do
     article <- from $ table @Article
@@ -242,14 +257,16 @@ countFavoritesExpr aid = subSelect $ do
   pure countRows
 
 -- | Expression to check if a user has favorited an article
-isFavoritedByExpr :: SqlExpr (Value ArticleId) -> SqlExpr (Value UserId) -> SqlExpr (Value Bool)
+isFavoritedByExpr
+  :: SqlExpr (Value ArticleId) -> SqlExpr (Value UserId) -> SqlExpr (Value Bool)
 isFavoritedByExpr aid uid = exists $ do
   fav <- from $ table @Favorite
   where_ (fav ^. FavoriteArticleId ==. aid)
   where_ (fav ^. FavoriteUserId ==. uid)
 
 -- | Expression to check if a follower is following an author
-isFollowingUserExpr :: SqlExpr (Value UserId) -> SqlExpr (Value UserId) -> SqlExpr (Value Bool)
+isFollowingUserExpr
+  :: SqlExpr (Value UserId) -> SqlExpr (Value UserId) -> SqlExpr (Value Bool)
 isFollowingUserExpr authorId followerId = exists $ do
   fol <- from $ table @Follow
   where_ (fol ^. FollowFollowedId ==. authorId)

@@ -1,65 +1,48 @@
-module Api.Route.Articles where
+module Api.Article.Handler where
 
 import Data.Map.Append (unAppendMap)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time (getCurrentTime)
-import Database.Persist (delete, deleteBy, deleteWhere, get, insert, insertBy, replace, (==.))
-import Database.Persist.Sql (Entity (..), SqlPersistT, fromSqlKey, runSqlPool, toSqlKey)
+import Database.Persist
+  ( delete
+  , deleteBy
+  , deleteWhere
+  , get
+  , insert
+  , insertBy
+  , replace
+  , (==.)
+  )
+import Database.Persist.Sql (Entity (..), SqlPersistT, runSqlPool, toSqlKey)
 import Effectful (liftIO)
 import Effectful.Error.Static (throwError)
 import Effectful.Reader.Static (ask)
-import GHC.Generics (Generic)
-import Servant (Capture, Delete, GenericMode (type (:-)), Get, JSON, NamedRoutes, Post, PostCreated, Put, QueryParam, ReqBody, (:>))
+import Servant (NamedRoutes)
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Entity.Article.Api (Article (..), ArticleListResponse (..), ArticleResponse (..), NewArticleRequest (..), UpdateArticleRequest (..), toArticleResponse)
-import Entity.Comment.Api (Comment (..), CommentListResponse (..), CommentResponse (..), NewCommentRequest (..), toCommentResponse)
-import Entity.Profile.Api (Profile (..))
+import Api.Article.Type
 import Common.Type.App (App, AppEnv (..))
-import Entity.Article.Query
-import Entity.Comment.Query
 import DB.Schema.Type (UserId)
 import DB.Schema.Type qualified as DB
 import DB.Util (runDB)
-
-data ArticlesRoutes mode = ArticlesRoutes
-  { feed :: mode :- "feed" :> QueryParam "limit" Int :> QueryParam "offset" Int :> Get '[JSON] ArticleListResponse
-  -- ^ GET /api/articles/feed
-  , list :: mode :- QueryParam "tag" Text :> QueryParam "author" Text :> QueryParam "favorited" Text :> QueryParam "limit" Int :> QueryParam "offset" Int :> Get '[JSON] ArticleListResponse
-  -- ^ GET /api/articles
-  , create :: mode :- ReqBody '[JSON] NewArticleRequest :> PostCreated '[JSON] ArticleResponse
-  -- ^ POST /api/articles
-  , article :: mode :- Capture "slug" Text :> NamedRoutes ArticleRoutes
-  }
-  deriving stock (Generic)
-
-data ArticleRoutes mode = ArticleRoutes
-  { get :: mode :- Get '[JSON] ArticleResponse
-  -- ^ GET /api/articles/:slug
-  , update :: mode :- ReqBody '[JSON] UpdateArticleRequest :> Put '[JSON] ArticleResponse
-  -- ^ PUT /api/articles/:slug
-  , delete :: mode :- Delete '[JSON] S.NoContent
-  -- ^ DELETE /api/articles/:slug
-  , comments :: mode :- "comments" :> NamedRoutes CommentsRoutes
-  , favorite :: mode :- "favorite" :> Post '[JSON] ArticleResponse
-  -- ^ POST /api/articles/:slug/favorite
-  , unfavorite :: mode :- "favorite" :> Delete '[JSON] ArticleResponse
-  -- ^ DELETE /api/articles/:slug/favorite
-  }
-  deriving stock (Generic)
-
-data CommentsRoutes mode = CommentsRoutes
-  { list :: mode :- Get '[JSON] CommentListResponse
-  -- ^ GET /api/articles/:slug/comments
-  , create :: mode :- ReqBody '[JSON] NewCommentRequest :> PostCreated '[JSON] CommentResponse
-  -- ^ POST /api/articles/:slug/comments
-  , delete :: mode :- Capture "id" Int :> Delete '[JSON] S.NoContent
-  -- ^ DELETE /api/articles/:slug/comments/:id
-  }
-  deriving stock (Generic)
+import Entity.Article.Api
+  ( ArticleListResponse (..)
+  , ArticleResponse (..)
+  , NewArticleRequest (..)
+  , UpdateArticleRequest (..)
+  , toArticleResponse
+  )
+import Entity.Article.Query
+import Entity.Comment.Api
+  ( CommentListResponse (..)
+  , CommentResponse (..)
+  , NewCommentRequest (..)
+  , toCommentResponse
+  )
+import Entity.Comment.Query
 
 articlesServer :: S.AuthResult UserId -> S.ServerT (NamedRoutes ArticlesRoutes) App
 articlesServer auth =
@@ -95,7 +78,14 @@ getFeedHandler (S.Authenticated uid) mLimit mOffset = do
   return $ ArticleListResponse articles totalCount
 getFeedHandler _ _ _ = throwError S.err401
 
-getArticlesHandler :: S.AuthResult UserId -> Maybe Text -> Maybe Text -> Maybe Text -> Maybe Int -> Maybe Int -> App ArticleListResponse
+getArticlesHandler
+  :: S.AuthResult UserId
+  -> Maybe Text
+  -> Maybe Text
+  -> Maybe Text
+  -> Maybe Int
+  -> Maybe Int
+  -> App ArticleListResponse
 getArticlesHandler auth mTag mAuthor mFavorited mLimit mOffset = do
   let limit = maybe 20 id mLimit
   let offset = maybe 0 id mOffset
@@ -134,7 +124,8 @@ getArticleHandler auth slug = do
     Nothing -> throwError S.err404
     Just grouped -> return $ ArticleResponse $ toArticleResponse grouped
 
-updateArticleHandler :: S.AuthResult UserId -> Text -> UpdateArticleRequest -> App ArticleResponse
+updateArticleHandler
+  :: S.AuthResult UserId -> Text -> UpdateArticleRequest -> App ArticleResponse
 updateArticleHandler (S.Authenticated uid) slug (UpdateArticleRequest mTitle mDesc mBody mTags) = do
   mArt <- runDB (getArticleBySlug slug)
   case mArt of
@@ -212,7 +203,8 @@ getCommentsHandler auth slug = do
       comments <- runDB (mapM (toCommentResponse env mUid) pairs)
       return $ CommentListResponse comments
 
-createCommentHandler :: S.AuthResult UserId -> Text -> NewCommentRequest -> App CommentResponse
+createCommentHandler
+  :: S.AuthResult UserId -> Text -> NewCommentRequest -> App CommentResponse
 createCommentHandler (S.Authenticated uid) slug (NewCommentRequest body) = do
   env <- ask @AppEnv
   mArt <- runDB (getArticleBySlug slug)
@@ -225,7 +217,9 @@ createCommentHandler (S.Authenticated uid) slug (NewCommentRequest body) = do
       mUser <- runDB (get uid)
       case mUser of
         Nothing -> throwError S.err500
-        Just u -> CommentResponse <$> runDB (toCommentResponse env (Just uid) (Entity cid comment, Entity uid u))
+        Just u ->
+          CommentResponse
+            <$> runDB (toCommentResponse env (Just uid) (Entity cid comment, Entity uid u))
 createCommentHandler _ _ _ = throwError S.err401
 
 deleteCommentHandler :: S.AuthResult UserId -> Text -> Int -> App S.NoContent

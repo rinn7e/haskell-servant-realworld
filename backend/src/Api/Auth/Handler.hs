@@ -1,35 +1,38 @@
-module Api.Route.Users where
+module Api.Auth.Handler where
 
-import Data.Password.Argon2 (PasswordCheck (..), PasswordHash (..), checkPassword, hashPassword, mkPassword, unPasswordHash)
+import Data.Password.Argon2
+  ( PasswordCheck (..)
+  , PasswordHash (..)
+  , checkPassword
+  , hashPassword
+  , mkPassword
+  , unPasswordHash
+  )
 import Database.Persist (Entity (..), insert)
-import Database.Persist.Sql (SqlBackend, runSqlPool)
 import Effectful (liftIO)
 import Effectful.Error.Static (throwError)
 import Effectful.Reader.Static (ask)
-import GHC.Generics (Generic)
-import Servant (GenericMode (type (:-)), JSON, NamedRoutes, Post, PostCreated, ReqBody, (:>))
+import Servant (NamedRoutes)
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Entity.User.Api (LoginUserRequest (..), NewUserRequest (..), User (..), UserResponse (..))
+import Api.Auth.Type
 import Common.Type.App (App, AppEnv (..))
 import Common.Type.JWK (generateToken)
 import DB.Schema.Type (UserId)
 import DB.Schema.Type qualified as DB
-import Entity.User.Query (getUserByEmail)
 import DB.Util (runDB)
+import Entity.User.Api
+  ( LoginUserRequest (..)
+  , NewUserRequest (..)
+  , User (..)
+  , UserResponse (..)
+  )
+import Entity.User.Query (getUserByEmail)
 
-data UsersRoutes mode = UsersRoutes
-  { login :: mode :- "login" :> ReqBody '[JSON] LoginUserRequest :> Post '[JSON] UserResponse
-  -- ^ POST /api/users/login
-  , register :: mode :- ReqBody '[JSON] NewUserRequest :> PostCreated '[JSON] UserResponse
-  -- ^ POST /api/users
-  }
-  deriving stock (Generic)
-
-usersServer :: S.AuthResult UserId -> S.ServerT (NamedRoutes UsersRoutes) App
-usersServer auth =
-  UsersRoutes
+authServer :: S.AuthResult UserId -> S.ServerT (NamedRoutes AuthRoutes) App
+authServer auth =
+  AuthRoutes
     { login = loginHandler auth
     , register = registerHandler auth
     }

@@ -4,7 +4,12 @@ import Common.Type.Config (Config (..), loadConfig)
 import Control.Monad (forM_, when)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Logger (runStdoutLoggingT)
-import DB.Migration (generateMigration, getPendingMigrations, runMigrationsDown, runMigrationsUp)
+import DB.Migration
+  ( generateMigration
+  , getPendingMigrations
+  , runMigrationsDown
+  , runMigrationsUp
+  )
 import DB.Schema.Type (migrateAll)
 import Data.Text qualified as T
 import Database.Persist.Postgresql (createPostgresqlPool)

@@ -1,38 +1,21 @@
-module Api.Route.Profiles where
+module Api.Profile.Handler where
 
 import Data.Text (Text)
 import Database.Persist (deleteBy, insertBy)
-import Database.Persist.Sql (Entity (..), runSqlPool)
-import Effectful (liftIO)
+import Database.Persist.Sql (Entity (..))
 import Effectful.Error.Static (throwError)
-import Effectful.Reader.Static (ask)
-import GHC.Generics (Generic)
-import Servant (Capture, Delete, GenericMode (type (:-)), Get, JSON, NamedRoutes, Post, (:>))
+import Servant (NamedRoutes)
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Entity.Profile.Api (Profile (..), ProfileResponse (..))
-import Common.Type.App (App, AppEnv (..))
-import Entity.Follow.Query (isFollowing)
+import Api.Profile.Type
+import Common.Type.App (App)
 import DB.Schema.Type (UserId)
 import DB.Schema.Type qualified as DB
-import Entity.User.Query (getUserByUsername)
 import DB.Util (runDB)
-
-data ProfilesRoutes mode = ProfilesRoutes
-  { profile :: mode :- Capture "username" Text :> NamedRoutes ProfileRoutes
-  }
-  deriving stock (Generic)
-
-data ProfileRoutes mode = ProfileRoutes
-  { get :: mode :- Get '[JSON] ProfileResponse
-  -- ^ GET /api/profiles/:username
-  , follow :: mode :- "follow" :> Post '[JSON] ProfileResponse
-  -- ^ POST /api/profiles/:username/follow
-  , unfollow :: mode :- "follow" :> Delete '[JSON] ProfileResponse
-  -- ^ DELETE /api/profiles/:username/follow
-  }
-  deriving stock (Generic)
+import Entity.Follow.Query (isFollowing)
+import Entity.User.Api (Profile (..), ProfileResponse (..))
+import Entity.User.Query (getUserByUsername)
 
 profilesServer :: S.AuthResult UserId -> S.ServerT (NamedRoutes ProfilesRoutes) App
 profilesServer auth =

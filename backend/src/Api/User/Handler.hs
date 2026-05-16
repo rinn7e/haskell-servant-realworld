@@ -1,30 +1,21 @@
-module Api.Route.User where
+module Api.User.Handler where
 
 import Data.Password.Argon2 (hashPassword, mkPassword, unPasswordHash)
 import Database.Persist (get, replace)
-import Database.Persist.Sql (runSqlPool)
 import Effectful (liftIO)
 import Effectful.Error.Static (throwError)
 import Effectful.Reader.Static (ask)
-import GHC.Generics (Generic)
-import Servant (GenericMode (type (:-)), Get, JSON, NamedRoutes, Put, ReqBody, (:>))
+import Servant (NamedRoutes)
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Entity.User.Api (UpdateUserRequest (..), User (..), UserResponse (..))
+import Api.User.Type
 import Common.Type.App (App, AppEnv (..))
 import Common.Type.JWK (generateToken)
 import DB.Schema.Type (UserId)
 import DB.Schema.Type qualified as DB
 import DB.Util (runDB)
-
-data UserRoutes mode = UserRoutes
-  { get :: mode :- Get '[JSON] UserResponse
-  -- ^ GET /api/user
-  , update :: mode :- ReqBody '[JSON] UpdateUserRequest :> Put '[JSON] UserResponse
-  -- ^ PUT /api/user
-  }
-  deriving stock (Generic)
+import Entity.User.Api (UpdateUserRequest (..), User (..), UserResponse (..))
 
 userServer :: S.AuthResult UserId -> S.ServerT (NamedRoutes UserRoutes) App
 userServer auth =
@@ -66,5 +57,7 @@ updateCurrentUserHandler (S.Authenticated uid) (UpdateUserRequest mEmail mUserna
 
       runDB (replace uid newUser)
       token <- liftIO $ generateToken jwtKey uid
-      return $ UserResponse $ User newUser.email token newUser.username newUser.bio newUser.image
+      return $
+        UserResponse $
+          User newUser.email token newUser.username newUser.bio newUser.image
 updateCurrentUserHandler _ _ = throwError S.err401

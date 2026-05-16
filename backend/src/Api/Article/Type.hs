@@ -55,7 +55,10 @@ data ArticleRoute mode = ArticleRoute
   -- ^ GET /api/articles/:slug
   , updateArticle
       :: mode
-        :- "articles" :> Capture "slug" Text :> ReqBody '[JSON] UpdateArticleRequest :> Put '[JSON] ArticleResponse
+        :- "articles"
+          :> Capture "slug" Text
+          :> ReqBody '[JSON] UpdateArticleRequest
+          :> Put '[JSON] ArticleResponse
   -- ^ PUT /api/articles/:slug
   , deleteArticle
       :: mode
@@ -69,7 +72,8 @@ data ArticleRoute mode = ArticleRoute
       :: mode
         :- "articles" :> Capture "slug" Text :> "favorite" :> Delete '[JSON] ArticleResponse
   -- ^ DELETE /api/articles/:slug/favorite
-  , comments :: mode :- "articles" :> Capture "slug" Text :> "comments" :> NamedRoutes CommentRoute
+  , comments
+      :: mode :- "articles" :> Capture "slug" Text :> "comments" :> NamedRoutes CommentRoute
   -- ^ /api/articles/:slug/comments
   }
   deriving stock (Generic)
@@ -77,7 +81,8 @@ data ArticleRoute mode = ArticleRoute
 data CommentRoute mode = CommentRoute
   { getCommentList :: mode :- Get '[JSON] CommentListResponse
   -- ^ GET /api/articles/:slug/comments
-  , createComment :: mode :- ReqBody '[JSON] NewCommentRequest :> PostCreated '[JSON] CommentResponse
+  , createComment
+      :: mode :- ReqBody '[JSON] NewCommentRequest :> PostCreated '[JSON] CommentResponse
   -- ^ POST /api/articles/:slug/comments
   , deleteComment :: mode :- Capture "id" Int :> Delete '[JSON] S.NoContent
   -- ^ DELETE /api/articles/:slug/comments/:id

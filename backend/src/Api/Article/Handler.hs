@@ -65,7 +65,8 @@ articleRoute auth =
 
 -- Handlers
 
-getArticleFeedHandler :: S.AuthResult UserId -> Maybe Int -> Maybe Int -> App ArticleListResponse
+getArticleFeedHandler
+  :: S.AuthResult UserId -> Maybe Int -> Maybe Int -> App ArticleListResponse
 getArticleFeedHandler (S.Authenticated uid) mLimit mOffset = do
   let limit = maybe 20 id mLimit
   let offset = maybe 0 id mOffset

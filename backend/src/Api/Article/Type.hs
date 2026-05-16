@@ -26,8 +26,8 @@ import Entity.Article.Api
   )
 import Entity.Comment.Api (CommentListResponse, CommentResponse, NewCommentRequest)
 
-data ArticlesRoutes mode = ArticlesRoutes
-  { feed
+data ArticleRoute mode = ArticleRoute
+  { getArticleFeed
       :: mode
         :- "articles"
           :> "feed"
@@ -35,7 +35,7 @@ data ArticlesRoutes mode = ArticlesRoutes
           :> QueryParam "offset" Int
           :> Get '[JSON] ArticleListResponse
   -- ^ GET /api/articles/feed
-  , list
+  , getArticleList
       :: mode
         :- "articles"
           :> QueryParam "tag" Text
@@ -45,35 +45,41 @@ data ArticlesRoutes mode = ArticlesRoutes
           :> QueryParam "offset" Int
           :> Get '[JSON] ArticleListResponse
   -- ^ GET /api/articles
-  , create
+  , createArticle
       :: mode
         :- "articles" :> ReqBody '[JSON] NewArticleRequest :> PostCreated '[JSON] ArticleResponse
   -- ^ POST /api/articles
-  , article :: mode :- "articles" :> Capture "slug" Text :> NamedRoutes ArticleRoutes
-  }
-  deriving stock (Generic)
-
-data ArticleRoutes mode = ArticleRoutes
-  { get :: mode :- Get '[JSON] ArticleResponse
+  , getArticleOne
+      :: mode
+        :- "articles" :> Capture "slug" Text :> Get '[JSON] ArticleResponse
   -- ^ GET /api/articles/:slug
-  , update :: mode :- ReqBody '[JSON] UpdateArticleRequest :> Put '[JSON] ArticleResponse
+  , updateArticle
+      :: mode
+        :- "articles" :> Capture "slug" Text :> ReqBody '[JSON] UpdateArticleRequest :> Put '[JSON] ArticleResponse
   -- ^ PUT /api/articles/:slug
-  , delete :: mode :- Delete '[JSON] S.NoContent
+  , deleteArticle
+      :: mode
+        :- "articles" :> Capture "slug" Text :> Delete '[JSON] S.NoContent
   -- ^ DELETE /api/articles/:slug
-  , comments :: mode :- "comments" :> NamedRoutes CommentsRoutes
-  , favorite :: mode :- "favorite" :> Post '[JSON] ArticleResponse
+  , favoriteArticle
+      :: mode
+        :- "articles" :> Capture "slug" Text :> "favorite" :> Post '[JSON] ArticleResponse
   -- ^ POST /api/articles/:slug/favorite
-  , unfavorite :: mode :- "favorite" :> Delete '[JSON] ArticleResponse
+  , unfavoriteArticle
+      :: mode
+        :- "articles" :> Capture "slug" Text :> "favorite" :> Delete '[JSON] ArticleResponse
   -- ^ DELETE /api/articles/:slug/favorite
+  , comments :: mode :- "articles" :> Capture "slug" Text :> "comments" :> NamedRoutes CommentRoute
+  -- ^ /api/articles/:slug/comments
   }
   deriving stock (Generic)
 
-data CommentsRoutes mode = CommentsRoutes
-  { list :: mode :- Get '[JSON] CommentListResponse
+data CommentRoute mode = CommentRoute
+  { getCommentList :: mode :- Get '[JSON] CommentListResponse
   -- ^ GET /api/articles/:slug/comments
-  , create :: mode :- ReqBody '[JSON] NewCommentRequest :> PostCreated '[JSON] CommentResponse
+  , createComment :: mode :- ReqBody '[JSON] NewCommentRequest :> PostCreated '[JSON] CommentResponse
   -- ^ POST /api/articles/:slug/comments
-  , delete :: mode :- Capture "id" Int :> Delete '[JSON] S.NoContent
+  , deleteComment :: mode :- Capture "id" Int :> Delete '[JSON] S.NoContent
   -- ^ DELETE /api/articles/:slug/comments/:id
   }
   deriving stock (Generic)

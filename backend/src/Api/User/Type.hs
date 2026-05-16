@@ -16,7 +16,7 @@ import Servant
 
 import Entity.User.Api (ProfileResponse, UpdateUserRequest, UserResponse)
 
-data UserRoutes mode = UserRoutes
+data UserRoute mode = UserRoute
   { getCurrentUser :: mode :- "user" :> Get '[JSON] UserResponse
   -- ^ GET /api/user
   , updateCurrentUser :: mode :- "user" :> ReqBody '[JSON] UpdateUserRequest :> Put '[JSON] UserResponse

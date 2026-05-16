@@ -44,41 +44,38 @@ import Entity.Comment.Api
   )
 import Entity.Comment.Query
 
-articlesServer :: S.AuthResult UserId -> S.ServerT (NamedRoutes ArticlesRoutes) App
+articlesServer :: S.AuthResult UserId -> S.ServerT (NamedRoutes ArticleRoute) App
 articlesServer auth =
-  ArticlesRoutes
-    { feed = getFeedHandler auth
-    , list = getArticlesHandler auth
-    , create = createArticleHandler auth
-    , article = \slug ->
-        ArticleRoutes
-          { get = getArticleHandler auth slug
-          , update = updateArticleHandler auth slug
-          , delete = deleteArticleHandler auth slug
-          , comments =
-              CommentsRoutes
-                { list = getCommentsHandler auth slug
-                , create = createCommentHandler auth slug
-                , delete = deleteCommentHandler auth slug
-                }
-          , favorite = favoriteHandler auth slug
-          , unfavorite = unfavoriteHandler auth slug
+  ArticleRoute
+    { getArticleFeed = getArticleFeedHandler auth
+    , getArticleList = getArticleListHandler auth
+    , createArticle = createArticleHandler auth
+    , getArticleOne = getArticleOneHandler auth
+    , updateArticle = updateArticleHandler auth
+    , deleteArticle = deleteArticleHandler auth
+    , favoriteArticle = favoriteArticleHandler auth
+    , unfavoriteArticle = unfavoriteArticleHandler auth
+    , comments = \slug ->
+        CommentRoute
+          { getCommentList = getCommentListHandler auth slug
+          , createComment = createCommentHandler auth slug
+          , deleteComment = deleteCommentHandler auth slug
           }
     }
 
 -- Handlers
 
-getFeedHandler :: S.AuthResult UserId -> Maybe Int -> Maybe Int -> App ArticleListResponse
-getFeedHandler (S.Authenticated uid) mLimit mOffset = do
+getArticleFeedHandler :: S.AuthResult UserId -> Maybe Int -> Maybe Int -> App ArticleListResponse
+getArticleFeedHandler (S.Authenticated uid) mLimit mOffset = do
   let limit = maybe 20 id mLimit
   let offset = maybe 0 id mOffset
   groupedArticles <- runDB (listFeed uid limit offset)
   totalCount <- runDB (countFeed uid)
   let articles = map toArticleResponse $ Map.elems $ unAppendMap groupedArticles
   return $ ArticleListResponse articles totalCount
-getFeedHandler _ _ _ = throwError S.err401
+getArticleFeedHandler _ _ _ = throwError S.err401
 
-getArticlesHandler
+getArticleListHandler
   :: S.AuthResult UserId
   -> Maybe Text
   -> Maybe Text
@@ -86,7 +83,7 @@ getArticlesHandler
   -> Maybe Int
   -> Maybe Int
   -> App ArticleListResponse
-getArticlesHandler auth mTag mAuthor mFavorited mLimit mOffset = do
+getArticleListHandler auth mTag mAuthor mFavorited mLimit mOffset = do
   let limit = maybe 20 id mLimit
   let offset = maybe 0 id mOffset
   let mUid = case auth of
@@ -114,8 +111,8 @@ createArticleHandler (S.Authenticated uid) (NewArticleRequest title desc body mT
     Nothing -> throwError S.err500
 createArticleHandler _ _ = throwError S.err401
 
-getArticleHandler :: S.AuthResult UserId -> Text -> App ArticleResponse
-getArticleHandler auth slug = do
+getArticleOneHandler :: S.AuthResult UserId -> Text -> App ArticleResponse
+getArticleOneHandler auth slug = do
   let mUid = case auth of
         S.Authenticated uid -> Just uid
         _ -> Nothing
@@ -189,8 +186,8 @@ deleteArticleHandler (S.Authenticated uid) slug = do
           return S.NoContent
 deleteArticleHandler _ _ = throwError S.err401
 
-getCommentsHandler :: S.AuthResult UserId -> Text -> App CommentListResponse
-getCommentsHandler auth slug = do
+getCommentListHandler :: S.AuthResult UserId -> Text -> App CommentListResponse
+getCommentListHandler auth slug = do
   env <- ask @AppEnv
   mArt <- runDB (getArticleBySlug slug)
   case mArt of
@@ -236,8 +233,8 @@ deleteCommentHandler (S.Authenticated uid) _ cidInt = do
           return S.NoContent
 deleteCommentHandler _ _ _ = throwError S.err401
 
-favoriteHandler :: S.AuthResult UserId -> Text -> App ArticleResponse
-favoriteHandler (S.Authenticated uid) slug = do
+favoriteArticleHandler :: S.AuthResult UserId -> Text -> App ArticleResponse
+favoriteArticleHandler (S.Authenticated uid) slug = do
   mArt <- runDB (getArticleBySlug slug)
   case mArt of
     Nothing -> throwError S.err404
@@ -247,10 +244,10 @@ favoriteHandler (S.Authenticated uid) slug = do
       case mGrouped of
         Just grouped -> return $ ArticleResponse $ toArticleResponse grouped
         Nothing -> throwError S.err500
-favoriteHandler _ _ = throwError S.err401
+favoriteArticleHandler _ _ = throwError S.err401
 
-unfavoriteHandler :: S.AuthResult UserId -> Text -> App ArticleResponse
-unfavoriteHandler (S.Authenticated uid) slug = do
+unfavoriteArticleHandler :: S.AuthResult UserId -> Text -> App ArticleResponse
+unfavoriteArticleHandler (S.Authenticated uid) slug = do
   mArt <- runDB (getArticleBySlug slug)
   case mArt of
     Nothing -> throwError S.err404
@@ -260,4 +257,4 @@ unfavoriteHandler (S.Authenticated uid) slug = do
       case mGrouped of
         Just grouped -> return $ ArticleResponse $ toArticleResponse grouped
         Nothing -> throwError S.err500
-unfavoriteHandler _ _ = throwError S.err401
+unfavoriteArticleHandler _ _ = throwError S.err401

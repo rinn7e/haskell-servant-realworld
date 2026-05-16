@@ -30,15 +30,15 @@ import Entity.User.Api
   )
 import Entity.User.Query (getUserByEmail)
 
-authServer :: S.AuthResult UserId -> S.ServerT (NamedRoutes AuthRoutes) App
+authServer :: S.AuthResult UserId -> S.ServerT (NamedRoutes AuthRoute) App
 authServer auth =
-  AuthRoutes
-    { login = loginHandler auth
-    , register = registerHandler auth
+  AuthRoute
+    { loginUser = loginUserHandler auth
+    , registerUser = registerUserHandler auth
     }
 
-loginHandler :: S.AuthResult UserId -> LoginUserRequest -> App UserResponse
-loginHandler _ (LoginUserRequest email pwd) = do
+loginUserHandler :: S.AuthResult UserId -> LoginUserRequest -> App UserResponse
+loginUserHandler _ (LoginUserRequest email pwd) = do
   AppEnv{appJwtKey = jwtKey} <- ask
   mUser <- runDB (getUserByEmail email)
   case mUser of
@@ -50,8 +50,8 @@ loginHandler _ (LoginUserRequest email pwd) = do
           return $ UserResponse $ User u.email token u.username u.bio u.image
         PasswordCheckFail -> throwError S.err401{S.errBody = "Invalid email or password"}
 
-registerHandler :: S.AuthResult UserId -> NewUserRequest -> App UserResponse
-registerHandler _ (NewUserRequest username email pwd) = do
+registerUserHandler :: S.AuthResult UserId -> NewUserRequest -> App UserResponse
+registerUserHandler _ (NewUserRequest username email pwd) = do
   AppEnv{appJwtKey = jwtKey} <- ask
   hashedPwd <- liftIO $ hashPassword (mkPassword pwd)
   uid <- runDB $ insert $ DB.User username email (unPasswordHash hashedPwd) Nothing Nothing

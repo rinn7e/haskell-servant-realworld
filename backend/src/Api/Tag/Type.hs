@@ -5,8 +5,8 @@ import Servant (GenericMode (type (:-)), Get, JSON, (:>))
 
 import Entity.Tag.Api (TagListResponse)
 
-data TagsRoutes mode = TagsRoutes
-  { tags :: mode :- "tags" :> Get '[JSON] TagListResponse
+data TagRoute mode = TagRoute
+  { getTagList :: mode :- "tags" :> Get '[JSON] TagListResponse
   -- ^ GET /api/tags
   }
   deriving stock (Generic)

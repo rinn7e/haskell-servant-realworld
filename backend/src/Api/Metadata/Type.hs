@@ -5,8 +5,8 @@ import Servant (GenericMode (type (:-)), Get, JSON, (:>))
 
 import Common.Type.Metadata (MetadataResponse)
 
-data MetadataRoutes mode = MetadataRoutes
-  { metadata :: mode :- "metadata" :> Get '[JSON] MetadataResponse
+data MetadataRoute mode = MetadataRoute
+  { getMetadata :: mode :- "metadata" :> Get '[JSON] MetadataResponse
   -- ^ GET /api/metadata
   }
   deriving stock (Generic)

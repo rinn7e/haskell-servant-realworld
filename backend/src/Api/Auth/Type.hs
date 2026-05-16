@@ -5,12 +5,12 @@ import Servant (GenericMode (type (:-)), JSON, Post, PostCreated, ReqBody, (:>))
 
 import Entity.User.Api (LoginUserRequest, NewUserRequest, UserResponse)
 
-data AuthRoutes mode = AuthRoutes
-  { login
+data AuthRoute mode = AuthRoute
+  { loginUser
       :: mode
         :- "users" :> "login" :> ReqBody '[JSON] LoginUserRequest :> Post '[JSON] UserResponse
   -- ^ POST /api/users/login
-  , register
+  , registerUser
       :: mode :- "users" :> ReqBody '[JSON] NewUserRequest :> PostCreated '[JSON] UserResponse
   -- ^ POST /api/users
   }

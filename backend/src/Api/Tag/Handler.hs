@@ -11,13 +11,13 @@ import DB.Util (runDB)
 import Entity.Tag.Api (TagListResponse (..))
 import Entity.Tag.Query (getTags)
 
-tagsServer :: S.AuthResult UserId -> S.ServerT (NamedRoutes TagsRoutes) App
+tagsServer :: S.AuthResult UserId -> S.ServerT (NamedRoutes TagRoute) App
 tagsServer _auth =
-  TagsRoutes
-    { tags = getTagsHandler
+  TagRoute
+    { getTagList = getTagListHandler
     }
 
-getTagsHandler :: App TagListResponse
-getTagsHandler = do
+getTagListHandler :: App TagListResponse
+getTagListHandler = do
   tags <- runDB getTags
   return $ TagListResponse tags

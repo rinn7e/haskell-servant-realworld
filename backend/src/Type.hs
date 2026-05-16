@@ -9,21 +9,21 @@ import Servant (GenericMode (type (:-)), NamedRoutes, (:>))
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Article.Type (ArticlesRoutes)
-import Api.Auth.Type (AuthRoutes)
-import Api.Metadata.Type (MetadataRoutes)
-import Api.Tag.Type (TagsRoutes)
-import Api.User.Type (UserRoutes)
+import Api.Article.Type (ArticleRoute)
+import Api.Auth.Type (AuthRoute)
+import Api.Metadata.Type (MetadataRoute)
+import Api.Tag.Type (TagRoute)
+import Api.User.Type (UserRoute)
 import DB.Schema.Type (UserId)
 
-type AppApi auths = S.Auth auths UserId :> NamedRoutes AppRoutes
+type AppApi auths = S.Auth auths UserId :> NamedRoutes AppRoute
 
-data AppRoutes mode = AppRoutes
-  { metadata :: mode :- NamedRoutes MetadataRoutes
-  , auth :: mode :- NamedRoutes AuthRoutes
-  , user :: mode :- NamedRoutes UserRoutes
-  , articles :: mode :- NamedRoutes ArticlesRoutes
-  , tags :: mode :- NamedRoutes TagsRoutes
+data AppRoute mode = AppRoute
+  { metadata :: mode :- NamedRoutes MetadataRoute
+  , auth :: mode :- NamedRoutes AuthRoute
+  , user :: mode :- NamedRoutes UserRoute
+  , articles :: mode :- NamedRoutes ArticleRoute
+  , tags :: mode :- NamedRoutes TagRoute
   }
   deriving stock (Generic)
 

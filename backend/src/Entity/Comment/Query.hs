@@ -1,17 +1,19 @@
 module Entity.Comment.Query where
 
 import Database.Esqueleto.Experimental
+import Database.Persist qualified as P
 import UnliftIO (MonadUnliftIO)
 
 import DB.Schema.Type
+import Entity.Comment.Api (NewCommentRequest (..))
 
-getCommentsForArticle
+listComments
   :: (MonadUnliftIO m) => ArticleId -> SqlPersistT m [(Entity Comment, Entity User)]
-getCommentsForArticle aid = fmap (map (\(c :& u) -> (c, u))) $ select $ getCommentsForArticleSQL aid
+listComments aid = fmap (map (\(c :& u) -> (c, u))) $ select $ listCommentsSQL aid
 
-getCommentsForArticleSQL
+listCommentsSQL
   :: ArticleId -> SqlQuery (SqlExpr (Entity Comment) :& SqlExpr (Entity User))
-getCommentsForArticleSQL aid = do
+listCommentsSQL aid = do
   (comment :& author) <-
     from $
       table @Comment
@@ -19,3 +21,17 @@ getCommentsForArticleSQL aid = do
   where_ (comment ^. CommentArticleId ==. val aid)
   orderBy [desc (comment ^. CommentCreatedAt)]
   return (comment :& author)
+
+insertComment
+  :: (MonadUnliftIO m)
+  => ArticleId
+  -> UserId
+  -> NewCommentRequest
+  -> SqlPersistT m (Maybe (Entity Comment, Entity User))
+insertComment aid uid (NewCommentRequest body) = do
+  cid <- P.insert $ Comment body aid uid
+  mComment <- P.get cid
+  mAuthor <- P.get uid
+  case (mComment, mAuthor) of
+    (Just c, Just u) -> return $ Just (Entity cid c, Entity uid u)
+    _ -> return Nothing

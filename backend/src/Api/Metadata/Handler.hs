@@ -16,14 +16,14 @@ import DB.Util (runDB)
 import Effectful.Reader.Static (ask)
 import Paths_haskell_servant_realworld qualified as Paths
 
-metadataServer :: S.AuthResult UserId -> S.ServerT (NamedRoutes MetadataRoutes) App
+metadataServer :: S.AuthResult UserId -> S.ServerT (NamedRoutes MetadataRoute) App
 metadataServer _auth =
-  MetadataRoutes
-    { metadata = metadataHandler
+  MetadataRoute
+    { getMetadata = getMetadataHandler
     }
 
-metadataHandler :: App MetadataResponse
-metadataHandler = do
+getMetadataHandler :: App MetadataResponse
+getMetadataHandler = do
   AppEnv{appConfig = config} <- ask
   lastMigration <- runDB getLastRanMigration
   return $

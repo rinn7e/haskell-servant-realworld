@@ -55,7 +55,7 @@ getArticlesHandler _ _ _ _ _ = throwError S.err401
 
 toAdminArticleResponse :: ArticleGrouped -> AdminArticle
 toAdminArticleResponse
-  ( First (Entity _ (art :: DB.Article))
+  ( First (Entity aid (art :: DB.Article))
     , First (Entity uid (author :: DB.User))
     , tagsMap
     , (First favCount, First isFav, _)
@@ -63,6 +63,7 @@ toAdminArticleResponse
     let tags = map (\(First t) -> t.entityVal.name) $ Map.elems $ unAppendMap tagsMap
         adminAuthor = toAdminUserResponse (Entity uid author)
      in AdminArticle
+          (fromIntegral (fromSqlKey aid))
           art.slug
           art.title
           art.description

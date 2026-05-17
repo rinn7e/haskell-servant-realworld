@@ -197,7 +197,8 @@ toArticleResponse
 -------------------------------
 
 data AdminArticle = AdminArticle
-  { slug :: Text
+  { id :: Int
+  , slug :: Text
   , title :: Text
   , description :: Text
   , body :: Text

@@ -16,6 +16,10 @@ components:
           maximum: 9223372036854775807
           minimum: -9223372036854775808
           type: integer
+        id:
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          type: integer
         slug:
           type: string
         tagList:
@@ -27,6 +31,7 @@ components:
         updatedAt:
           $ref: '#/components/schemas/UTCTime'
       required:
+      - id
       - slug
       - title
       - description

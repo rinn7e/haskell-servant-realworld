@@ -48,14 +48,14 @@ adminUserRoute auth =
 getUsersHandler
   :: S.AuthResult UserId
   -> Maybe Int
+  -> Maybe Int
   -> Maybe Text
   -> Maybe Text
   -> App AdminUserListResponse
-getUsersHandler (S.Authenticated uid) mPage mUsername mEmail = do
+getUsersHandler (S.Authenticated uid) mLimit mOffset mUsername mEmail = do
   guardAdmin uid
-  let page = maybe 1 id mPage
-      pageSize = 10
-      offset = (page - 1) * pageSize
+  let limit = maybe 10 id mLimit
+      offset = maybe 0 id mOffset
 
   let filters =
         concat
@@ -65,14 +65,14 @@ getUsersHandler (S.Authenticated uid) mPage mUsername mEmail = do
 
   runDB $ do
     totalCount <- fromIntegral <$> count filters
-    entities <- selectList filters [Asc DB.UserUsername, LimitTo pageSize, OffsetBy offset]
+    entities <- selectList filters [Asc DB.UserUsername, LimitTo limit, OffsetBy offset]
     let users = map toAdminUserResponse entities
     return
       AdminUserListResponse
         { users = users
         , totalCount = totalCount
         }
-getUsersHandler _ _ _ _ = throwError S.err401
+getUsersHandler _ _ _ _ _ = throwError S.err401
 
 updateUserRoleHandler
   :: S.AuthResult UserId -> Int -> UpdateUserRoleRequest -> App AdminUserResponse

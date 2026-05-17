@@ -317,7 +317,14 @@ paths:
       description: Retrieve all articles in the system for administrative review
       parameters:
       - in: query
-        name: page
+        name: limit
+        required: false
+        schema:
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          type: integer
+      - in: query
+        name: offset
         required: false
         schema:
           maximum: 9223372036854775807
@@ -346,7 +353,7 @@ paths:
                 $ref: '#/components/schemas/AdminArticleListResponse'
           description: ''
         '400':
-          description: Invalid `search` or `author` or `tag` or `page`
+          description: Invalid `search` or `author` or `tag` or `offset` or `limit`
       summary: Get All Articles
       tags:
       - Admin Articles
@@ -375,7 +382,14 @@ paths:
         filters
       parameters:
       - in: query
-        name: page
+        name: limit
+        required: false
+        schema:
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          type: integer
+      - in: query
+        name: offset
         required: false
         schema:
           maximum: 9223372036854775807
@@ -399,7 +413,7 @@ paths:
                 $ref: '#/components/schemas/AdminCommentListResponse'
           description: ''
         '400':
-          description: Invalid `articleSlug` or `author` or `page`
+          description: Invalid `articleSlug` or `author` or `offset` or `limit`
       summary: Get All Comments
       tags:
       - Admin Comments
@@ -483,10 +497,17 @@ paths:
       - Admin Authentication
   /api/admin/logs:
     get:
-      description: Get paginated system audit and moderator logs
+      description: Get paginated system audit and moderator logs using limit and offset
       parameters:
       - in: query
-        name: page
+        name: limit
+        required: false
+        schema:
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          type: integer
+      - in: query
+        name: offset
         required: false
         schema:
           maximum: 9223372036854775807
@@ -515,8 +536,8 @@ paths:
                 $ref: '#/components/schemas/LogListResponse'
           description: ''
         '400':
-          description: Invalid `source` or `level` or `page`
-      summary: Get System Logs
+          description: Invalid `source` or `level` or `offset` or `limit`
+      summary: Get Paginated Logs
       tags:
       - Admin Dashboard
   /api/admin/user:
@@ -537,7 +558,14 @@ paths:
       description: Retrieve all registered users with pagination and keyword filters
       parameters:
       - in: query
-        name: page
+        name: limit
+        required: false
+        schema:
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          type: integer
+      - in: query
+        name: offset
         required: false
         schema:
           maximum: 9223372036854775807
@@ -561,7 +589,7 @@ paths:
                 $ref: '#/components/schemas/AdminUserListResponse'
           description: ''
         '400':
-          description: Invalid `email` or `username` or `page`
+          description: Invalid `email` or `username` or `offset` or `limit`
       summary: Get All Users
       tags:
       - Admin Users
@@ -618,10 +646,17 @@ paths:
       - Admin Users
   /api/admin/visitors:
     get:
-      description: Get paginated visitor traffic records
+      description: Get paginated visitor traffic records using limit and offset
       parameters:
       - in: query
-        name: page
+        name: limit
+        required: false
+        schema:
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          type: integer
+      - in: query
+        name: offset
         required: false
         schema:
           maximum: 9223372036854775807
@@ -645,8 +680,8 @@ paths:
                 $ref: '#/components/schemas/VisitorListResponse'
           description: ''
         '400':
-          description: Invalid `path` or `ip` or `page`
-      summary: Get Visitor Logs
+          description: Invalid `path` or `ip` or `offset` or `limit`
+      summary: Get Paginated Visitor Logs
       tags:
       - Admin Dashboard
 security:

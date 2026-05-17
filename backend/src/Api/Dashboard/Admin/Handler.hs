@@ -73,12 +73,16 @@ getDashboardStatsHandler (S.Authenticated uid) = do
 getDashboardStatsHandler _ = throwError S.err401
 
 getLogsHandler
-  :: S.AuthResult UserId -> Maybe Int -> Maybe LogLevel -> Maybe Text -> App LogListResponse
-getLogsHandler (S.Authenticated uid) mPage mLevel mSource = do
+  :: S.AuthResult UserId
+  -> Maybe Int
+  -> Maybe Int
+  -> Maybe LogLevel
+  -> Maybe Text
+  -> App LogListResponse
+getLogsHandler (S.Authenticated uid) mLimit mOffset mLevel mSource = do
   guardAdmin uid
-  let page = maybe 1 id mPage
-      pageSize = 10
-      offset = (page - 1) * pageSize
+  let limit = maybe 10 id mLimit
+      offset = maybe 0 id mOffset
 
   let filters =
         concat
@@ -88,7 +92,7 @@ getLogsHandler (S.Authenticated uid) mPage mLevel mSource = do
 
   runDB $ do
     totalCount <- fromIntegral <$> count filters
-    entities <- selectList filters [Desc DB.LogTimestamp, LimitTo pageSize, OffsetBy offset]
+    entities <- selectList filters [Desc DB.LogTimestamp, LimitTo limit, OffsetBy offset]
     let logs = map toLogResponse entities
     return
       LogListResponse
@@ -106,15 +110,19 @@ getLogsHandler (S.Authenticated uid) mPage mLevel mSource = do
        , timestamp = l.timestamp
        , userId = fmap (fromIntegral . fromSqlKey) l.userId
        }
-getLogsHandler _ _ _ _ = throwError S.err401
+getLogsHandler _ _ _ _ _ = throwError S.err401
 
 getVisitorsHandler
-  :: S.AuthResult UserId -> Maybe Int -> Maybe Text -> Maybe Text -> App VisitorListResponse
-getVisitorsHandler (S.Authenticated uid) mPage mIp mPath = do
+  :: S.AuthResult UserId
+  -> Maybe Int
+  -> Maybe Int
+  -> Maybe Text
+  -> Maybe Text
+  -> App VisitorListResponse
+getVisitorsHandler (S.Authenticated uid) mLimit mOffset mIp mPath = do
   guardAdmin uid
-  let page = maybe 1 id mPage
-      pageSize = 10
-      offset = (page - 1) * pageSize
+  let limit = maybe 10 id mLimit
+      offset = maybe 0 id mOffset
 
   let filters =
         concat
@@ -125,7 +133,7 @@ getVisitorsHandler (S.Authenticated uid) mPage mIp mPath = do
   runDB $ do
     totalCount <- fromIntegral <$> count filters
     entities <-
-      selectList filters [Desc DB.VisitorTimestamp, LimitTo pageSize, OffsetBy offset]
+      selectList filters [Desc DB.VisitorTimestamp, LimitTo limit, OffsetBy offset]
     let visitors = map toVisitorResponse entities
     return
       VisitorListResponse
@@ -142,7 +150,7 @@ getVisitorsHandler (S.Authenticated uid) mPage mIp mPath = do
        , path = v.path
        , timestamp = v.timestamp
        }
-getVisitorsHandler _ _ _ _ = throwError S.err401
+getVisitorsHandler _ _ _ _ _ = throwError S.err401
 
 getVisitorStatsHandler :: S.AuthResult UserId -> Maybe Text -> App [VisitorStatResponse]
 getVisitorStatsHandler (S.Authenticated uid) mFilter = do

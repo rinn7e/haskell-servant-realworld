@@ -37,14 +37,14 @@ adminCommentRoute auth =
 getCommentsHandler
   :: S.AuthResult UserId
   -> Maybe Int
+  -> Maybe Int
   -> Maybe Text
   -> Maybe Text
   -> App AdminCommentListResponse
-getCommentsHandler (S.Authenticated uid) mPage mAuthor mArticleSlug = do
+getCommentsHandler (S.Authenticated uid) mLimit mOffset mAuthor mArticleSlug = do
   guardAdmin uid
-  let page = maybe 1 id mPage
-      pageSize = 10
-      offset = (page - 1) * pageSize
+  let limit = maybe 10 id mLimit
+      offset = maybe 0 id mOffset
 
   runDB $ do
     mAuthorId <- case mAuthor of
@@ -63,11 +63,11 @@ getCommentsHandler (S.Authenticated uid) mPage mAuthor mArticleSlug = do
           _ -> pure (Just $ toSqlKey (-1))
     let filters =
           concat
-            [ maybe [] (\authId -> [DB.CommentAuthorId ==. authId]) mAuthorId
-            , maybe [] (\artId -> [DB.CommentArticleId ==. artId]) mArtId
-            ]
+             [ maybe [] (\authId -> [DB.CommentAuthorId ==. authId]) mAuthorId
+             , maybe [] (\artId -> [DB.CommentArticleId ==. artId]) mArtId
+             ]
     totalCount <- fromIntegral <$> count filters
-    entities <- selectList filters [Desc DB.CommentCreatedAt, LimitTo pageSize, OffsetBy offset]
+    entities <- selectList filters [Desc DB.CommentCreatedAt, LimitTo limit, OffsetBy offset]
     comments <- forM entities $ \(Entity cid c) -> do
       mArt <- get c.articleId
       mUser <- get c.authorId
@@ -88,7 +88,7 @@ getCommentsHandler (S.Authenticated uid) mPage mAuthor mArticleSlug = do
         }
  where
   forM = flip mapM
-getCommentsHandler _ _ _ _ = throwError S.err401
+getCommentsHandler _ _ _ _ _ = throwError S.err401
 
 deleteCommentHandler :: S.AuthResult UserId -> Int -> App S.NoContent
 deleteCommentHandler (S.Authenticated uid) cidInt = do

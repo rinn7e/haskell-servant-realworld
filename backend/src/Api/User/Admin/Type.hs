@@ -31,7 +31,8 @@ data AdminUserRoute mode = AdminUserRoute
           :> Summary "Get All Users"
           :> Description "Retrieve all registered users with pagination and keyword filters"
           :> Tag "Admin Users"
-          :> QueryParam "page" Int
+          :> QueryParam "limit" Int
+          :> QueryParam "offset" Int
           :> QueryParam "username" Text
           :> QueryParam "email" Text
           :> Get '[JSON] AdminUserListResponse

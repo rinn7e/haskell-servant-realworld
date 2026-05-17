@@ -36,22 +36,22 @@ adminArticleRoute auth =
 getArticlesHandler
   :: S.AuthResult UserId
   -> Maybe Int
+  -> Maybe Int
   -> Maybe Text
   -> Maybe Text
   -> Maybe Text
   -> App AdminArticleListResponse
-getArticlesHandler (S.Authenticated uid) mPage mTag mAuthor mSearch = do
+getArticlesHandler (S.Authenticated uid) mLimit mOffset mTag mAuthor mSearch = do
   guardAdmin uid
-  let page = maybe 1 id mPage
-      pageSize = 10
-      offset = (page - 1) * pageSize
+  let limit = maybe 10 id mLimit
+      offset = maybe 0 id mOffset
 
   runDB $ do
-    groupedArticles <- listAdminArticles mTag mAuthor mSearch pageSize offset
+    groupedArticles <- listAdminArticles mTag mAuthor mSearch limit offset
     totalCount <- countAdminArticles mTag mAuthor mSearch
     let articles = map toAdminArticleResponse $ Map.elems $ unAppendMap groupedArticles
     return $ AdminArticleListResponse articles totalCount
-getArticlesHandler _ _ _ _ _ = throwError S.err401
+getArticlesHandler _ _ _ _ _ _ = throwError S.err401
 
 toAdminArticleResponse :: ArticleGrouped -> AdminArticle
 toAdminArticleResponse

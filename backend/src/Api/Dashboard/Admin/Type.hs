@@ -38,20 +38,22 @@ data AdminDashboardRoute mode = AdminDashboardRoute
   , getLogs
       :: mode
         :- "logs"
-          :> Summary "Get System Logs"
-          :> Description "Get paginated system audit and moderator logs"
+          :> Summary "Get Paginated Logs"
+          :> Description "Get paginated system audit and moderator logs using limit and offset"
           :> Tag "Admin Dashboard"
-          :> QueryParam "page" Int
+          :> QueryParam "limit" Int
+          :> QueryParam "offset" Int
           :> QueryParam "level" LogLevel
           :> QueryParam "source" Text
           :> Get '[JSON] LogListResponse
   , getVisitors
       :: mode
         :- "visitors"
-          :> Summary "Get Visitor Logs"
-          :> Description "Get paginated visitor traffic records"
+          :> Summary "Get Paginated Visitor Logs"
+          :> Description "Get paginated visitor traffic records using limit and offset"
           :> Tag "Admin Dashboard"
-          :> QueryParam "page" Int
+          :> QueryParam "limit" Int
+          :> QueryParam "offset" Int
           :> QueryParam "ip" Text
           :> QueryParam "path" Text
           :> Get '[JSON] VisitorListResponse

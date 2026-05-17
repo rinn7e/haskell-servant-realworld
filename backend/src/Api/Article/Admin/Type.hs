@@ -25,7 +25,8 @@ data AdminArticleRoute mode = AdminArticleRoute
           :> Summary "Get All Articles"
           :> Description "Retrieve all articles in the system for administrative review"
           :> Tag "Admin Articles"
-          :> QueryParam "page" Int
+          :> QueryParam "limit" Int
+          :> QueryParam "offset" Int
           :> QueryParam "tag" Text
           :> QueryParam "author" Text
           :> QueryParam "search" Text

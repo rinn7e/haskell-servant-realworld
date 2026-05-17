@@ -1,4 +1,4 @@
-module Api.Article.Type where
+module Api.Article.Web.Type where
 
 import Data.Text (Text)
 import GHC.Generics (Generic)
@@ -20,6 +20,7 @@ import Servant
   )
 import Servant qualified as S
 
+import Api.Comment.Web.Type (CommentRoute)
 import Api.TagCombinator (Tag)
 
 import Entity.Article.Api
@@ -28,7 +29,6 @@ import Entity.Article.Api
   , NewArticleRequest
   , UpdateArticleRequest
   )
-import Entity.Comment.Api (CommentListResponse, CommentResponse, NewCommentRequest)
 
 data ArticleRoute mode = ArticleRoute
   { getArticleFeed
@@ -115,32 +115,5 @@ data ArticleRoute mode = ArticleRoute
   , comments
       :: mode :- "articles" :> Capture "slug" Text :> "comments" :> NamedRoutes CommentRoute
   -- ^ /api/articles/:slug/comments
-  }
-  deriving stock (Generic)
-
-data CommentRoute mode = CommentRoute
-  { getCommentList
-      :: mode
-        :- Summary "Get Comments"
-          :> Description "Get comments for an article"
-          :> Tag "Articles"
-          :> Get '[JSON] CommentListResponse
-  -- ^ GET /api/articles/:slug/comments
-  , createComment
-      :: mode
-        :- Summary "Create Comment"
-          :> Description "Create a comment for an article"
-          :> Tag "Articles"
-          :> ReqBody '[JSON] NewCommentRequest
-          :> PostCreated '[JSON] CommentResponse
-  -- ^ POST /api/articles/:slug/comments
-  , deleteComment
-      :: mode
-        :- Capture "id" Int
-          :> Summary "Delete Comment"
-          :> Description "Delete a comment for an article"
-          :> Tag "Articles"
-          :> Delete '[JSON] S.NoContent
-  -- ^ DELETE /api/articles/:slug/comments/:id
   }
   deriving stock (Generic)

@@ -1,6 +1,4 @@
-module Api.User.Type where
-
-import Api.TagCombinator (Tag)
+module Api.User.Web.Type where
 
 import Data.Text (Text)
 import GHC.Generics (Generic)
@@ -18,6 +16,7 @@ import Servant
   , (:>)
   )
 
+import Api.TagCombinator (Tag)
 import Entity.User.Api (ProfileResponse, UpdateUserRequest, UserResponse)
 
 data UserRoute mode = UserRoute

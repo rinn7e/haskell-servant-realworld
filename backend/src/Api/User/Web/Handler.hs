@@ -1,4 +1,4 @@
-module Api.User.Handler where
+module Api.User.Web.Handler where
 
 import Data.Password.Argon2 (hashPassword, mkPassword, unPasswordHash)
 import Data.Text (Text)
@@ -11,7 +11,7 @@ import Servant (NamedRoutes)
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.User.Type
+import Api.User.Web.Type
 import Common.Type.App (App, AppEnv (..))
 import Common.Type.JWK (generateToken)
 import DB.Schema.Type (UserId)
@@ -67,6 +67,7 @@ updateCurrentUserHandler (S.Authenticated uid) (UpdateUserRequest mEmail mUserna
               , password = newHashedPwd
               , bio = maybe u.bio Just mBio
               , image = maybe u.image Just mImage
+              , role = u.role
               }
 
       runDB (replace uid newUser)

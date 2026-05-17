@@ -1,4 +1,4 @@
-module Api.Article.Handler where
+module Api.Article.Web.Handler where
 
 import Data.Map.Append (unAppendMap)
 import Data.Map.Strict qualified as Map
@@ -15,16 +15,16 @@ import Database.Persist
   , replace
   , (==.)
   )
-import Database.Persist.Sql (Entity (..), SqlPersistT, runSqlPool, toSqlKey)
+import Database.Persist.Sql (Entity (..), SqlPersistT)
 import Effectful (liftIO)
 import Effectful.Error.Static (throwError)
-import Effectful.Reader.Static (ask)
 import Servant (NamedRoutes)
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Article.Type
-import Common.Type.App (App, AppEnv (..))
+import Api.Article.Web.Type
+import Api.Comment.Web.Handler qualified as Comm
+import Common.Type.App (App)
 import DB.Schema.Type (UserId)
 import DB.Schema.Type qualified as DB
 import DB.Util (runDB)
@@ -36,13 +36,6 @@ import Entity.Article.Api
   , toArticleResponse
   )
 import Entity.Article.Query
-import Entity.Comment.Api
-  ( CommentListResponse (..)
-  , CommentResponse (..)
-  , NewCommentRequest (..)
-  , toCommentResponse
-  )
-import Entity.Comment.Query
 
 articleRoute :: S.AuthResult UserId -> S.ServerT (NamedRoutes ArticleRoute) App
 articleRoute auth =
@@ -55,15 +48,8 @@ articleRoute auth =
     , deleteArticle = deleteArticleHandler auth
     , favoriteArticle = favoriteArticleHandler auth
     , unfavoriteArticle = unfavoriteArticleHandler auth
-    , comments = \slug ->
-        CommentRoute
-          { getCommentList = getCommentListHandler auth slug
-          , createComment = createCommentHandler auth slug
-          , deleteComment = deleteCommentHandler auth slug
-          }
+    , comments = Comm.commentRoute auth
     }
-
--- Handlers
 
 getArticleFeedHandler
   :: S.AuthResult UserId -> Maybe Int -> Maybe Int -> App ArticleListResponse
@@ -158,10 +144,8 @@ updateArticleHandler (S.Authenticated uid) slug (UpdateArticleRequest mTitle mDe
             Nothing -> throwError S.err500
 updateArticleHandler _ _ _ = throwError S.err401
 
--- | Helper to ensure a tag exists and is linked to an article
 ensureTag :: DB.ArticleId -> Text -> SqlPersistT IO ()
 ensureTag aid tagName = do
-  -- Create tag if it doesn't exist, then link it to the article
   tid <- do
     res <- insertBy (DB.Tag tagName)
     case res of
@@ -186,53 +170,6 @@ deleteArticleHandler (S.Authenticated uid) slug = do
             delete aid
           return S.NoContent
 deleteArticleHandler _ _ = throwError S.err401
-
-getCommentListHandler :: S.AuthResult UserId -> Text -> App CommentListResponse
-getCommentListHandler auth slug = do
-  env <- ask @AppEnv
-  mArt <- runDB (getArticleBySlug slug)
-  case mArt of
-    Nothing -> throwError S.err404
-    Just (Entity aid _) -> do
-      pairs <- runDB (getCommentsForArticle aid)
-      let mUid = case auth of
-            S.Authenticated uid -> Just uid
-            _ -> Nothing
-      comments <- runDB (mapM (toCommentResponse env mUid) pairs)
-      return $ CommentListResponse comments
-
-createCommentHandler
-  :: S.AuthResult UserId -> Text -> NewCommentRequest -> App CommentResponse
-createCommentHandler (S.Authenticated uid) slug (NewCommentRequest body) = do
-  env <- ask @AppEnv
-  mArt <- runDB (getArticleBySlug slug)
-  case mArt of
-    Nothing -> throwError S.err404
-    Just (Entity aid _) -> do
-      now <- liftIO getCurrentTime
-      let comment = DB.Comment body uid aid now now
-      cid <- runDB (insert comment)
-      mUser <- runDB (get uid)
-      case mUser of
-        Nothing -> throwError S.err500
-        Just u ->
-          CommentResponse
-            <$> runDB (toCommentResponse env (Just uid) (Entity cid comment, Entity uid u))
-createCommentHandler _ _ _ = throwError S.err401
-
-deleteCommentHandler :: S.AuthResult UserId -> Text -> Int -> App S.NoContent
-deleteCommentHandler (S.Authenticated uid) _ cidInt = do
-  let cid :: DB.CommentId = toSqlKey (fromIntegral cidInt)
-  mComm <- runDB (get cid)
-  case mComm of
-    Nothing -> throwError S.err404
-    Just comm -> do
-      if comm.authorId /= uid
-        then throwError S.err403
-        else do
-          runDB (delete cid)
-          return S.NoContent
-deleteCommentHandler _ _ _ = throwError S.err401
 
 favoriteArticleHandler :: S.AuthResult UserId -> Text -> App ArticleResponse
 favoriteArticleHandler (S.Authenticated uid) slug = do

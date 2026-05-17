@@ -1,4 +1,4 @@
-module Api.Metadata.Type where
+module Api.Metadata.Web.Type where
 
 import Api.TagCombinator (Tag)
 

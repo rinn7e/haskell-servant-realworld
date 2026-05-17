@@ -1,5 +1,6 @@
 module Api.OpenApi
   ( openApiSpec
+  , adminOpenApiSpec
   ) where
 
 import Control.Lens ((&), (.~), (?~))
@@ -26,22 +27,38 @@ import Servant.Auth.Server qualified as S
 import Servant.OpenApi
 
 import DB.Schema.Type (UserId)
-import Type (API)
+import Type (AdminAPI, WebAPI)
 
-{- | Orphan instance to seamlessly skip S.Auth during automatic OpenApi parsing.
-This allows servant-openapi3 to process authenticated routes safely.
--}
 instance (HasOpenApi sub) => HasOpenApi (S.Auth auths UserId :> sub) where
   toOpenApi _ = toOpenApi (Proxy @sub)
 
--- | Beautifully configured OpenApi specification for the Conduit backend.
+-- | Beautifully configured OpenApi specification for the public Conduit backend.
 openApiSpec :: OpenApi
 openApiSpec =
-  toOpenApi (Proxy @API)
+  toOpenApi (Proxy @WebAPI)
     & info . title .~ "Conduit API"
     & info . version .~ "1.0.0"
     & info . description
       ?~ "RealWorld Conduit API backend using Servant, Postgres, and Esqueleto!"
+    & components . securitySchemes
+      .~ SecurityDefinitions (InsOrd.fromList [("jwt", securityScheme)])
+    & security .~ [SecurityRequirement (InsOrd.fromList [("jwt", [])])]
+ where
+  securityScheme :: SecurityScheme
+  securityScheme =
+    SecurityScheme
+      { _securitySchemeType = SecuritySchemeApiKey (ApiKeyParams "Authorization" ApiKeyHeader)
+      , _securitySchemeDescription = Just "JWT Bearer token format: Token <JWT_TOKEN>"
+      }
+
+-- | Beautifully configured OpenApi specification for the secure Admin backend.
+adminOpenApiSpec :: OpenApi
+adminOpenApiSpec =
+  toOpenApi (Proxy @AdminAPI)
+    & info . title .~ "Conduit Admin API"
+    & info . version .~ "1.0.0"
+    & info . description
+      ?~ "Secure Sentinel administration moderation and activity metrics dashboard."
     & components . securitySchemes
       .~ SecurityDefinitions (InsOrd.fromList [("jwt", securityScheme)])
     & security .~ [SecurityRequirement (InsOrd.fromList [("jwt", [])])]

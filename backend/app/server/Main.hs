@@ -31,7 +31,7 @@ import DB.Migration
   , runMigrationsUp
   )
 import DB.Schema.Type (migrateAll)
-import RunServer (APIWithOpenApi, AppEnv (..), runServerWithOpenApi)
+import RunServer (FullAPI, AppEnv (..), runFullServer)
 import Type
 
 main :: IO ()
@@ -86,9 +86,9 @@ main = do
     logStdoutDev $
       corsMiddleware $
         authMiddleware $
-          S.serveWithContext api cfg (runServerWithOpenApi (AppEnv pool jwtSettings jwtKey config))
+          S.serveWithContext api cfg (runFullServer (AppEnv pool jwtSettings jwtKey config))
 
-api :: Proxy APIWithOpenApi
+api :: Proxy FullAPI
 api = Proxy
 
 authMiddleware :: Middleware

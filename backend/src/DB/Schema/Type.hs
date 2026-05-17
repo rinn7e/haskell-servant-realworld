@@ -26,8 +26,24 @@ User
     password Text
     bio Text Maybe
     image Text Maybe
+    role Text default='User'
     UniqueUsername username
     UniqueEmail email
+    deriving Show Generic
+
+Visitor
+    ip Text
+    userAgent Text
+    path Text
+    timestamp UTCTime
+    deriving Show Generic
+
+Log
+    level Text
+    message Text
+    source Text
+    timestamp UTCTime
+    userId UserId Maybe
     deriving Show Generic
 
 Article

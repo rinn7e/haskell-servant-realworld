@@ -6,13 +6,13 @@ build:
 
 # Generate OpenAPI 3.0 specification in YAML format
 swagger-yaml:
-	stack repl haskell-servant-realworld:lib --package yaml --ghc-options="-e \"import Api.OpenApi (openApiSpec)\" -e \"import Data.Yaml qualified as Y\" -e \"import Data.ByteString.Char8 qualified as BS\" -e \"BS.writeFile \\\"swagger.yaml\\\" (Y.encode openApiSpec)\""
-	@echo "Generated swagger.yaml successfully!"
+	stack repl haskell-servant-realworld:lib --package yaml --ghc-options="-e \"import Api.OpenApi (openApiSpec, adminOpenApiSpec)\" -e \"import Data.Yaml qualified as Y\" -e \"import Data.ByteString.Char8 qualified as BS\" -e \"BS.writeFile \\\"swagger.yaml\\\" (Y.encode openApiSpec)\" -e \"BS.writeFile \\\"admin-swagger.yaml\\\" (Y.encode adminOpenApiSpec)\""
+	@echo "Generated swagger.yaml and admin-swagger.yaml successfully!"
 
 # Generate OpenAPI 3.0 specification in JSON format
 swagger-json:
-	stack repl haskell-servant-realworld:lib --package aeson-pretty --ghc-options="-e \"import Api.OpenApi (openApiSpec)\" -e \"import Data.Aeson.Encode.Pretty qualified as AP\" -e \"import Data.ByteString.Lazy.Char8 qualified as BSL\" -e \"BSL.writeFile \\\"swagger.json\\\" (AP.encodePretty openApiSpec)\""
-	@echo "Generated swagger.json successfully!"
+	stack repl haskell-servant-realworld:lib --package aeson-pretty --ghc-options="-e \"import Api.OpenApi (openApiSpec, adminOpenApiSpec)\" -e \"import Data.Aeson.Encode.Pretty qualified as AP\" -e \"import Data.ByteString.Lazy.Char8 qualified as BSL\" -e \"BSL.writeFile \\\"swagger.json\\\" (AP.encodePretty openApiSpec)\" -e \"BSL.writeFile \\\"admin-swagger.json\\\" (AP.encodePretty adminOpenApiSpec)\""
+	@echo "Generated swagger.json and admin-swagger.json successfully!"
 
 
 

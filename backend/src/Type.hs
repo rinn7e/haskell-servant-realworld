@@ -26,6 +26,9 @@ import Api.User.Admin.Type (AdminUserRoute)
 import Api.User.Web.Type (UserRoute)
 import DB.Schema.Type (UserId)
 
+import Api.TagCombinator (Tag)
+import Entity.User.Api (UserResponse)
+
 type AppApi auths = S.Auth auths UserId :> NamedRoutes AppRoute
 
 data AppRoute mode = AppRoute

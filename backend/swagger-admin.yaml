@@ -519,6 +519,19 @@ paths:
       summary: Get System Logs
       tags:
       - Admin Dashboard
+  /api/admin/user:
+    get:
+      description: Get currently logged-in administrator details
+      responses:
+        '200':
+          content:
+            application/json;charset=utf-8:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+          description: ''
+      summary: Get Current Admin
+      tags:
+      - Admin Authentication
   /api/admin/users:
     get:
       description: Retrieve all registered users with pagination and keyword filters

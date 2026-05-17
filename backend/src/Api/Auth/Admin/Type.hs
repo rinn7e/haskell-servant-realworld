@@ -5,6 +5,7 @@ import GHC.Generics (Generic)
 import Servant
   ( Description
   , GenericMode (type (:-))
+  , Get
   , JSON
   , Post
   , ReqBody
@@ -23,5 +24,12 @@ data AdminAuthRoute mode = AdminAuthRoute
           :> Tag "Admin Authentication"
           :> ReqBody '[JSON] LoginUserRequest
           :> Post '[JSON] UserResponse
+  , getCurrentAdmin
+      :: mode
+        :- "user"
+          :> Summary "Get Current Admin"
+          :> Description "Get currently logged-in administrator details"
+          :> Tag "Admin Authentication"
+          :> Get '[JSON] UserResponse
   }
   deriving stock (Generic)

@@ -11,8 +11,8 @@ import DB.Util (runDB)
 import Entity.Tag.Api (TagListResponse (..))
 import Entity.Tag.Query (getTags)
 
-tagRoute :: S.AuthResult UserId -> S.ServerT (NamedRoutes TagRoute) App
-tagRoute _auth =
+webTagRoute :: S.AuthResult UserId -> S.ServerT (NamedRoutes TagRoute) App
+webTagRoute _auth =
   TagRoute
     { getTagList = getTagListHandler
     }

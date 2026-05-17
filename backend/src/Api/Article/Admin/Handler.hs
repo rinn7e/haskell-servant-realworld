@@ -12,9 +12,9 @@ import Servant (NamedRoutes)
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Admin.Guard (guardAdmin)
 import Api.Article.Admin.Type
 import Common.Type.App (App)
+import Common.Util.Guard (guardAdmin)
 import DB.Schema.Type (UserId)
 import DB.Schema.Type qualified as DB
 import DB.Util (runDB)

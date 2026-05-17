@@ -16,9 +16,10 @@ import Servant.Swagger.UI (SwaggerSchemaUI)
 
 import Api.Article.Admin.Type (AdminArticleRoute)
 import Api.Article.Web.Type (ArticleRoute)
+import Api.Auth.Admin.Type (AdminAuthRoute)
 import Api.Auth.Type (AuthRoute)
 import Api.Comment.Admin.Type (AdminCommentRoute)
-import Api.Metadata.Admin.Type (AdminMetadataRoute)
+import Api.Dashboard.Admin.Type (AdminDashboardRoute)
 import Api.Metadata.Web.Type (MetadataRoute)
 import Api.Tag.Type (TagRoute)
 import Api.User.Admin.Type (AdminUserRoute)
@@ -39,7 +40,8 @@ data AppRoute mode = AppRoute
 type WebAPI = "api" :> AppApi '[S.JWT]
 
 data AdminRoute mode = AdminRoute
-  { metadata :: mode :- NamedRoutes AdminMetadataRoute
+  { auth :: mode :- NamedRoutes AdminAuthRoute
+  , dashboard :: mode :- NamedRoutes AdminDashboardRoute
   , articles :: mode :- NamedRoutes AdminArticleRoute
   , users :: mode :- NamedRoutes AdminUserRoute
   , comments :: mode :- NamedRoutes AdminCommentRoute
@@ -50,4 +52,5 @@ type AdminAPI = "api" :> "admin" :> S.Auth '[S.JWT] UserId :> NamedRoutes AdminR
 
 type APIWithOpenApi = WebAPI :<|> SwaggerSchemaUI "swagger-ui" "swagger.json"
 
-type AdminAPIWithOpenApi = AdminAPI :<|> SwaggerSchemaUI "admin/swagger-ui" "admin-swagger.json"
+type AdminAPIWithOpenApi =
+  AdminAPI :<|> ("admin" :> SwaggerSchemaUI "swagger-ui" "admin-swagger.json")

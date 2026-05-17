@@ -1,18 +1,18 @@
-.PHONY: build watch server server-watch resetdb seed migrate-generate migrate-up migrate-down migrate-check lint format build-haddock build-hoogle hoogle test compile install exec run-installed swagger-yaml swagger-json
+.PHONY: build watch server server-watch resetdb seed migrate-generate migrate-up migrate-down migrate-check lint format build-haddock build-hoogle hoogle test compile install exec run-installed swagger-web swagger-admin
 
 # Build with fast compilation
 build:
 	stack build --fast
 
-# Generate OpenAPI 3.0 specification in YAML format
-swagger-yaml:
-	stack repl haskell-servant-realworld:lib --package yaml --ghc-options="-e \"import Api.OpenApi (openApiSpec, adminOpenApiSpec)\" -e \"import Data.Yaml qualified as Y\" -e \"import Data.ByteString.Char8 qualified as BS\" -e \"BS.writeFile \\\"swagger.yaml\\\" (Y.encode openApiSpec)\" -e \"BS.writeFile \\\"admin-swagger.yaml\\\" (Y.encode adminOpenApiSpec)\""
-	@echo "Generated swagger.yaml and admin-swagger.yaml successfully!"
+# Generate Web OpenAPI 3.0 specification in YAML format
+swagger-web:
+	stack repl haskell-servant-realworld:lib --package yaml --ghc-options="-e \"import Api.OpenApi (openApiSpec)\" -e \"import Data.Yaml qualified as Y\" -e \"import Data.ByteString.Char8 qualified as BS\" -e \"BS.writeFile \\\"swagger-web.yaml\\\" (Y.encode openApiSpec)\""
+	@echo "Generated swagger-web.yaml successfully!"
 
-# Generate OpenAPI 3.0 specification in JSON format
-swagger-json:
-	stack repl haskell-servant-realworld:lib --package aeson-pretty --ghc-options="-e \"import Api.OpenApi (openApiSpec, adminOpenApiSpec)\" -e \"import Data.Aeson.Encode.Pretty qualified as AP\" -e \"import Data.ByteString.Lazy.Char8 qualified as BSL\" -e \"BSL.writeFile \\\"swagger.json\\\" (AP.encodePretty openApiSpec)\" -e \"BSL.writeFile \\\"admin-swagger.json\\\" (AP.encodePretty adminOpenApiSpec)\""
-	@echo "Generated swagger.json and admin-swagger.json successfully!"
+# Generate Admin OpenAPI 3.0 specification in YAML format
+swagger-admin:
+	stack repl haskell-servant-realworld:lib --package yaml --ghc-options="-e \"import Api.OpenApi (adminOpenApiSpec)\" -e \"import Data.Yaml qualified as Y\" -e \"import Data.ByteString.Char8 qualified as BS\" -e \"BS.writeFile \\\"swagger-admin.yaml\\\" (Y.encode adminOpenApiSpec)\""
+	@echo "Generated swagger-admin.yaml successfully!"
 
 
 

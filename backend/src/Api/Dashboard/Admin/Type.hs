@@ -1,4 +1,4 @@
-module Api.Metadata.Admin.Type where
+module Api.Dashboard.Admin.Type where
 
 import Data.Text (Text)
 import GHC.Generics (Generic)
@@ -17,21 +17,21 @@ import Entity.Dashboard.Api (DashboardStatsResponse)
 import Entity.Log.Api (LogListResponse)
 import Entity.Visitor.Api (VisitorListResponse)
 
-data AdminMetadataRoute mode = AdminMetadataRoute
+data AdminDashboardRoute mode = AdminDashboardRoute
   { getDashboardStats
       :: mode
         :- "dashboard"
           :> "stats"
           :> Summary "Get Dashboard Stats"
           :> Description "Get dashboard card and visitor metrics"
-          :> Tag "Admin Metadata"
+          :> Tag "Admin Dashboard"
           :> Get '[JSON] DashboardStatsResponse
   , getLogs
       :: mode
         :- "logs"
           :> Summary "Get System Logs"
           :> Description "Get paginated system audit and moderator logs"
-          :> Tag "Admin Metadata"
+          :> Tag "Admin Dashboard"
           :> QueryParam "page" Int
           :> QueryParam "level" Text
           :> QueryParam "source" Text
@@ -41,7 +41,7 @@ data AdminMetadataRoute mode = AdminMetadataRoute
         :- "visitors"
           :> Summary "Get Visitor Logs"
           :> Description "Get paginated visitor traffic records"
-          :> Tag "Admin Metadata"
+          :> Tag "Admin Dashboard"
           :> QueryParam "page" Int
           :> QueryParam "ip" Text
           :> Get '[JSON] VisitorListResponse

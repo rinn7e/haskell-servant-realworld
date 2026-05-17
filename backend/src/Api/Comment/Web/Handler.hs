@@ -7,6 +7,7 @@ import Database.Persist.Sql (Entity (..), toSqlKey)
 import Effectful (liftIO)
 import Effectful.Error.Static (throwError)
 import Effectful.Reader.Static (ask)
+import Servant (NamedRoutes)
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 

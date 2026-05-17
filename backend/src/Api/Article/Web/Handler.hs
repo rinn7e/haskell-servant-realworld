@@ -37,8 +37,8 @@ import Entity.Article.Api
   )
 import Entity.Article.Query
 
-articleRoute :: S.AuthResult UserId -> S.ServerT (NamedRoutes ArticleRoute) App
-articleRoute auth =
+webArticleRoute :: S.AuthResult UserId -> S.ServerT (NamedRoutes ArticleRoute) App
+webArticleRoute auth =
   ArticleRoute
     { getArticleFeed = getArticleFeedHandler auth
     , getArticleList = getArticleListHandler auth

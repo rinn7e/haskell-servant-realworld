@@ -6,7 +6,3 @@ dist-newstyle/
 .DS_Store
 *.log
 .env
-
-swagger.yaml
-swagger.json
-../openapi3.yaml

@@ -17,8 +17,8 @@ import DB.Schema.Type (UserId)
 import DB.Util (runDB)
 import Paths_haskell_servant_realworld qualified as Paths
 
-metadataRoute :: S.AuthResult UserId -> S.ServerT (NamedRoutes MetadataRoute) App
-metadataRoute _auth =
+webMetadataRoute :: S.AuthResult UserId -> S.ServerT (NamedRoutes MetadataRoute) App
+webMetadataRoute _auth =
   MetadataRoute
     { getMetadata = getMetadataHandler
     }

@@ -27,8 +27,8 @@ import Entity.User.Api
   )
 import Entity.User.Query (getUserByUsername)
 
-userRoute :: S.AuthResult UserId -> S.ServerT (NamedRoutes UserRoute) App
-userRoute auth =
+webUserRoute :: S.AuthResult UserId -> S.ServerT (NamedRoutes UserRoute) App
+webUserRoute auth =
   UserRoute
     { getCurrentUser = getCurrentUserHandler auth
     , updateCurrentUser = updateCurrentUserHandler auth

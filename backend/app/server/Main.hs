@@ -31,7 +31,8 @@ import DB.Migration
   , runMigrationsUp
   )
 import DB.Schema.Type (migrateAll)
-import RunServer (FullAPI, AppEnv (..), runFullServer)
+import RunServer (AppEnv (..), FullAPI, runServer)
+import Text.RawString.QQ (r)
 import Type
 
 main :: IO ()
@@ -81,12 +82,32 @@ main = do
 
   let corsMiddleware = if config.allowCorsEnabled then allowCors else id
 
+  putStrLn
+    [r|====================================================================
+                         __              __
+                        /\ \          __/\ \__
+  ___    ___     ___    \_\ \  __  __/\_\ \ ,_\
+ /'___\ / __`\ /' _ `\  /'_` \/\ \/\ \/\ \ \ \/
+/\ \__//\ \L\ \/\ \/\ \/\ \L\ \ \ \_\ \ \ \ \ \_
+\ \____\ \____/\ \_\ \_\ \___,_\ \____/\ \_\ \__\
+ \/____/\/___/  \/_/\/_/\/__,_ /\/___/  \/_/\/__/
+ __                        __              ___    ___
+/\ \                      /\ \            /\_ \  /\_ \
+\ \ \___      __      ____\ \ \/'\      __\//\ \ \//\ \
+ \ \  _ `\  /'__`\   /',__\\ \ , <    /'__`\\ \ \  \ \ \
+  \ \ \ \ \/\ \L\.\_/\__, `\\ \ \\`\ /\  __/ \_\ \_ \_\ \_
+   \ \_\ \_\ \__/.\_\/\____/ \ \_\ \_\ \____\/\____\/\____\
+    \/_/\/_/\/__/\/_/\/___/   \/_/\/_/\/____/\/____/\/____/
+====================================================================|]
   putStrLn $ "Starting server on port " ++ show port
+  putStrLn $ "Swagger Web UI is at http://localhost:" ++ show port ++ "/swagger-ui"
+  putStrLn $ "Swagger Admin UI is at http://localhost:" ++ show port ++ "/admin/swagger-ui"
+  putStrLn $ "===================================================================="
   run port $
     logStdoutDev $
       corsMiddleware $
         authMiddleware $
-          S.serveWithContext api cfg (runFullServer (AppEnv pool jwtSettings jwtKey config))
+          S.serveWithContext api cfg (runServer (AppEnv pool jwtSettings jwtKey config))
 
 api :: Proxy FullAPI
 api = Proxy

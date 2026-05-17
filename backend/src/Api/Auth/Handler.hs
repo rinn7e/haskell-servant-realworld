@@ -30,8 +30,8 @@ import Entity.User.Api
   )
 import Entity.User.Query (getUserByEmail)
 
-authRoute :: S.AuthResult UserId -> S.ServerT (NamedRoutes AuthRoute) App
-authRoute auth =
+webAuthRoute :: S.AuthResult UserId -> S.ServerT (NamedRoutes AuthRoute) App
+webAuthRoute auth =
   AuthRoute
     { loginUser = loginUserHandler auth
     , registerUser = registerUserHandler auth
@@ -54,6 +54,7 @@ registerUserHandler :: S.AuthResult UserId -> NewUserRequest -> App UserResponse
 registerUserHandler _ (NewUserRequest username email pwd) = do
   AppEnv{appJwtKey = jwtKey} <- ask
   hashedPwd <- liftIO $ hashPassword (mkPassword pwd)
-  uid <- runDB $ insert $ DB.User username email (unPasswordHash hashedPwd) Nothing Nothing "User"
+  uid <-
+    runDB $ insert $ DB.User username email (unPasswordHash hashedPwd) Nothing Nothing "User"
   token <- liftIO $ generateToken jwtKey uid
   return $ UserResponse $ User email token username Nothing Nothing

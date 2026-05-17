@@ -5,7 +5,6 @@ import Data.Time (getCurrentTime)
 import Database.Persist
   ( Filter
   , SelectOpt (..)
-  , (==.)
   , count
   , delete
   , deleteWhere
@@ -13,6 +12,7 @@ import Database.Persist
   , insert
   , replace
   , selectList
+  , (==.)
   )
 import Database.Persist.Sql (Entity (..), fromSqlKey, toSqlKey)
 import Effectful (liftIO)
@@ -21,9 +21,9 @@ import Servant (NamedRoutes)
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Admin.Guard (guardAdmin)
 import Api.User.Admin.Type
 import Common.Type.App (App)
+import Common.Util.Guard (guardAdmin)
 import DB.Schema.Type (UserId)
 import DB.Schema.Type qualified as DB
 import DB.Util (runDB)
@@ -47,13 +47,15 @@ getUsersHandler (S.Authenticated uid) mPage = do
     totalCount <- fromIntegral <$> count ([] :: [Filter DB.User])
     entities <- selectList [] [Asc DB.UserUsername, LimitTo pageSize, OffsetBy offset]
     let users = map toAdminUserResponse entities
-    return AdminUserListResponse
-      { users = users
-      , totalCount = totalCount
-      }
+    return
+      AdminUserListResponse
+        { users = users
+        , totalCount = totalCount
+        }
 getUsersHandler _ _ = throwError S.err401
 
-updateUserRoleHandler :: S.AuthResult UserId -> Int -> UpdateUserRoleRequest -> App AdminUserResponse
+updateUserRoleHandler
+  :: S.AuthResult UserId -> Int -> UpdateUserRoleRequest -> App AdminUserResponse
 updateUserRoleHandler (S.Authenticated uid) targetUidInt req = do
   guardAdmin uid
   let targetUid = toSqlKey (fromIntegral targetUidInt)
@@ -62,10 +64,17 @@ updateUserRoleHandler (S.Authenticated uid) targetUidInt req = do
     Nothing -> throwError S.err404
     Just target -> do
       now <- liftIO getCurrentTime
-      let updatedUser = target { DB.role = req.role }
+      let updatedUser = target{DB.role = req.role}
       runDB $ do
         replace targetUid updatedUser
-        _ <- insert $ DB.Log "INFO" ("Updated user role for " <> target.username <> " to " <> req.role) "AUTH" now (Just uid)
+        _ <-
+          insert $
+            DB.Log
+              "INFO"
+              ("Updated user role for " <> target.username <> " to " <> req.role)
+              "AUTH"
+              now
+              (Just uid)
         return ()
       return $ toAdminUserResponse (Entity targetUid updatedUser)
 updateUserRoleHandler _ _ _ = throwError S.err401
@@ -102,20 +111,23 @@ deleteUserHandler (S.Authenticated uid) targetUidInt = do
         delete targetUid
 
         -- 6. Log the audit event
-        _ <- insert $ DB.Log "INFO" ("Banned/Deleted user account: " <> target.username) "AUTH" now (Just uid)
+        _ <-
+          insert $
+            DB.Log "INFO" ("Banned/Deleted user account: " <> target.username) "AUTH" now (Just uid)
         return ()
 
       return S.NoContent
-  where
-    forM_ = flip mapM_
+ where
+  forM_ = flip mapM_
 deleteUserHandler _ _ = throwError S.err401
 
 toAdminUserResponse :: Entity DB.User -> AdminUserResponse
-toAdminUserResponse (Entity uid u) = AdminUserResponse
-  { id = fromIntegral (fromSqlKey uid)
-  , username = u.username
-  , email = u.email
-  , bio = u.bio
-  , image = u.image
-  , role = u.role
-  }
+toAdminUserResponse (Entity uid u) =
+  AdminUserResponse
+    { id = fromIntegral (fromSqlKey uid)
+    , username = u.username
+    , email = u.email
+    , bio = u.bio
+    , image = u.image
+    , role = u.role
+    }

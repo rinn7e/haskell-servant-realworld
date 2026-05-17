@@ -41,6 +41,7 @@ dependencies:
   - servant-openapi3
   - servant-swagger-ui
   - insert-ordered-containers
+  - raw-strings-qq
 
 default-extensions:
   - BlockArguments

@@ -58,12 +58,12 @@ migrate-check:
 
 # Lint Haskell code
 lint:
-	hlint src exe
-	find src exe test -name "*.hs" | xargs fourmolu --mode check
+	hlint src app
+	find src app test -name "*.hs" | xargs fourmolu --mode check
 
 # Format Haskell code
 format:
-	find src exe test -name "*.hs" | xargs fourmolu --mode inplace
+	find src app test -name "*.hs" | xargs fourmolu --mode inplace
 
 # Generate documentation
 build-haddock:

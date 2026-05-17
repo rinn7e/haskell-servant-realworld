@@ -38,4 +38,3 @@ runServer env auth =
 
 runServerWithOpenApi :: AppEnv -> S.Server APIWithOpenApi
 runServerWithOpenApi env = runServer env :<|> SUI.swaggerSchemaUIServer openApiSpec
-

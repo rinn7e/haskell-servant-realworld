@@ -1,5 +1,7 @@
 module Api.User.Type where
 
+import Api.TagCombinator (Tag)
+
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Servant
@@ -24,6 +26,7 @@ data UserRoute mode = UserRoute
         :- "user"
           :> Summary "Get Current User"
           :> Description "Get the currently logged-in user details"
+          :> Tag "User"
           :> Get '[JSON] UserResponse
   -- ^ GET /api/user
   , updateCurrentUser
@@ -31,6 +34,7 @@ data UserRoute mode = UserRoute
         :- "user"
           :> Summary "Update Current User"
           :> Description "Update the currently logged-in user details"
+          :> Tag "User"
           :> ReqBody '[JSON] UpdateUserRequest
           :> Put '[JSON] UserResponse
   -- ^ PUT /api/user
@@ -40,6 +44,7 @@ data UserRoute mode = UserRoute
           :> Capture "username" Text
           :> Summary "Get Profile"
           :> Description "Get a user profile by username"
+          :> Tag "Profile"
           :> Get '[JSON] ProfileResponse
   -- ^ GET /api/profiles/:username
   , followUser
@@ -49,6 +54,7 @@ data UserRoute mode = UserRoute
           :> "follow"
           :> Summary "Follow User"
           :> Description "Follow a user by username"
+          :> Tag "Profile"
           :> Post '[JSON] ProfileResponse
   -- ^ POST /api/profiles/:username/follow
   , unfollowUser
@@ -58,6 +64,7 @@ data UserRoute mode = UserRoute
           :> "follow"
           :> Summary "Unfollow User"
           :> Description "Unfollow a user by username"
+          :> Tag "Profile"
           :> Delete '[JSON] ProfileResponse
   -- ^ DELETE /api/profiles/:username/follow
   }

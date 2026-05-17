@@ -15,8 +15,6 @@ import Data.HashMap.Strict.InsOrd qualified as InsOrd
 import Data.Map.Append (unAppendMap)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
-import Data.Proxy (Proxy (..))
-import Data.Semigroup (First (..))
 import Data.OpenApi
   ( NamedSchema (..)
   , OpenApiType (..)
@@ -27,6 +25,8 @@ import Data.OpenApi
   , required
   , type_
   )
+import Data.Proxy (Proxy (..))
+import Data.Semigroup (First (..))
 import Data.Text (Text)
 import Data.Time (UTCTime)
 import Database.Persist.Sql (Entity (..))
@@ -104,19 +104,23 @@ instance ToSchema NewArticleRequest where
     descriptionSchema <- declareSchemaRef (Proxy @Text)
     bodySchema <- declareSchemaRef (Proxy @Text)
     tagListSchema <- declareSchemaRef (Proxy @(Maybe [Text]))
-    let articleSchema = mempty
+    let articleSchema =
+          mempty
+            & type_ ?~ OpenApiObject
+            & properties
+              .~ InsOrd.fromList
+                [ ("title", titleSchema)
+                , ("description", descriptionSchema)
+                , ("body", bodySchema)
+                , ("tagList", tagListSchema)
+                ]
+            & required .~ ["title", "description", "body"]
+    return $
+      NamedSchema (Just "NewArticleRequest") $
+        mempty
           & type_ ?~ OpenApiObject
-          & properties .~ InsOrd.fromList
-              [ ("title", titleSchema)
-              , ("description", descriptionSchema)
-              , ("body", bodySchema)
-              , ("tagList", tagListSchema)
-              ]
-          & required .~ ["title", "description", "body"]
-    return $ NamedSchema (Just "NewArticleRequest") $ mempty
-      & type_ ?~ OpenApiObject
-      & properties .~ InsOrd.fromList [("article", Inline articleSchema)]
-      & required .~ ["article"]
+          & properties .~ InsOrd.fromList [("article", Inline articleSchema)]
+          & required .~ ["article"]
 
 -------------------------------
 -- UpdateArticleRequest
@@ -144,19 +148,22 @@ instance ToSchema UpdateArticleRequest where
     descriptionSchema <- declareSchemaRef (Proxy @(Maybe Text))
     bodySchema <- declareSchemaRef (Proxy @(Maybe Text))
     tagListSchema <- declareSchemaRef (Proxy @(Maybe [Text]))
-    let articleSchema = mempty
+    let articleSchema =
+          mempty
+            & type_ ?~ OpenApiObject
+            & properties
+              .~ InsOrd.fromList
+                [ ("title", titleSchema)
+                , ("description", descriptionSchema)
+                , ("body", bodySchema)
+                , ("tagList", tagListSchema)
+                ]
+    return $
+      NamedSchema (Just "UpdateArticleRequest") $
+        mempty
           & type_ ?~ OpenApiObject
-          & properties .~ InsOrd.fromList
-              [ ("title", titleSchema)
-              , ("description", descriptionSchema)
-              , ("body", bodySchema)
-              , ("tagList", tagListSchema)
-              ]
-    return $ NamedSchema (Just "UpdateArticleRequest") $ mempty
-      & type_ ?~ OpenApiObject
-      & properties .~ InsOrd.fromList [("article", Inline articleSchema)]
-      & required .~ ["article"]
-
+          & properties .~ InsOrd.fromList [("article", Inline articleSchema)]
+          & required .~ ["article"]
 
 -------------------------------
 -- Helpers

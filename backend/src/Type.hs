@@ -32,4 +32,3 @@ data AppRoute mode = AppRoute
 type API = "api" :> AppApi '[S.JWT]
 
 type APIWithOpenApi = API :<|> SwaggerSchemaUI "swagger-ui" "swagger.json"
-

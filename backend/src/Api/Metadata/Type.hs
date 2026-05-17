@@ -1,5 +1,7 @@
 module Api.Metadata.Type where
 
+import Api.TagCombinator (Tag)
+
 import GHC.Generics (Generic)
 import Servant
   ( Description
@@ -18,6 +20,7 @@ data MetadataRoute mode = MetadataRoute
         :- "metadata"
           :> Summary "Get Metadata"
           :> Description "Get backend system metadata"
+          :> Tag "Profile"
           :> Get '[JSON] MetadataResponse
   -- ^ GET /api/metadata
   }

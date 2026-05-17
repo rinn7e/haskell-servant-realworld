@@ -1,5 +1,7 @@
 module Api.Auth.Type where
 
+import Api.TagCombinator (Tag)
+
 import GHC.Generics (Generic)
 import Servant
   ( Description
@@ -21,6 +23,7 @@ data AuthRoute mode = AuthRoute
           :> "login"
           :> Summary "Login"
           :> Description "Login an existing user"
+          :> Tag "Authentication"
           :> ReqBody '[JSON] LoginUserRequest
           :> Post '[JSON] UserResponse
   -- ^ POST /api/users/login
@@ -29,6 +32,7 @@ data AuthRoute mode = AuthRoute
         :- "users"
           :> Summary "Register"
           :> Description "Register a new user"
+          :> Tag "Authentication"
           :> ReqBody '[JSON] NewUserRequest
           :> PostCreated '[JSON] UserResponse
   -- ^ POST /api/users

@@ -4,7 +4,6 @@ import Control.Lens ((&), (.~), (?~))
 import Data.Aeson (FromJSON (..), ToJSON (..), (.:), (.:?))
 import Data.Aeson qualified as A
 import Data.HashMap.Strict.InsOrd qualified as InsOrd
-import Data.Proxy (Proxy (..))
 import Data.OpenApi
   ( NamedSchema (..)
   , OpenApiType (..)
@@ -15,6 +14,7 @@ import Data.OpenApi
   , required
   , type_
   )
+import Data.Proxy (Proxy (..))
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
@@ -76,17 +76,21 @@ instance ToSchema LoginUserRequest where
   declareNamedSchema _ = do
     emailSchema <- declareSchemaRef (Proxy @Text)
     passwordSchema <- declareSchemaRef (Proxy @Text)
-    let userSchema = mempty
+    let userSchema =
+          mempty
+            & type_ ?~ OpenApiObject
+            & properties
+              .~ InsOrd.fromList
+                [ ("email", emailSchema)
+                , ("password", passwordSchema)
+                ]
+            & required .~ ["email", "password"]
+    return $
+      NamedSchema (Just "LoginUserRequest") $
+        mempty
           & type_ ?~ OpenApiObject
-          & properties .~ InsOrd.fromList
-              [ ("email", emailSchema)
-              , ("password", passwordSchema)
-              ]
-          & required .~ ["email", "password"]
-    return $ NamedSchema (Just "LoginUserRequest") $ mempty
-      & type_ ?~ OpenApiObject
-      & properties .~ InsOrd.fromList [("user", Inline userSchema)]
-      & required .~ ["user"]
+          & properties .~ InsOrd.fromList [("user", Inline userSchema)]
+          & required .~ ["user"]
 
 -------------------------------
 -- NewUserRequest
@@ -108,18 +112,22 @@ instance ToSchema NewUserRequest where
     usernameSchema <- declareSchemaRef (Proxy @Text)
     emailSchema <- declareSchemaRef (Proxy @Text)
     passwordSchema <- declareSchemaRef (Proxy @Text)
-    let userSchema = mempty
+    let userSchema =
+          mempty
+            & type_ ?~ OpenApiObject
+            & properties
+              .~ InsOrd.fromList
+                [ ("username", usernameSchema)
+                , ("email", emailSchema)
+                , ("password", passwordSchema)
+                ]
+            & required .~ ["username", "email", "password"]
+    return $
+      NamedSchema (Just "NewUserRequest") $
+        mempty
           & type_ ?~ OpenApiObject
-          & properties .~ InsOrd.fromList
-              [ ("username", usernameSchema)
-              , ("email", emailSchema)
-              , ("password", passwordSchema)
-              ]
-          & required .~ ["username", "email", "password"]
-    return $ NamedSchema (Just "NewUserRequest") $ mempty
-      & type_ ?~ OpenApiObject
-      & properties .~ InsOrd.fromList [("user", Inline userSchema)]
-      & required .~ ["user"]
+          & properties .~ InsOrd.fromList [("user", Inline userSchema)]
+          & required .~ ["user"]
 
 -------------------------------
 -- UpdateUserRequest
@@ -150,17 +158,20 @@ instance ToSchema UpdateUserRequest where
     passwordSchema <- declareSchemaRef (Proxy @(Maybe Text))
     bioSchema <- declareSchemaRef (Proxy @(Maybe Text))
     imageSchema <- declareSchemaRef (Proxy @(Maybe Text))
-    let userSchema = mempty
+    let userSchema =
+          mempty
+            & type_ ?~ OpenApiObject
+            & properties
+              .~ InsOrd.fromList
+                [ ("email", emailSchema)
+                , ("username", usernameSchema)
+                , ("password", passwordSchema)
+                , ("bio", bioSchema)
+                , ("image", imageSchema)
+                ]
+    return $
+      NamedSchema (Just "UpdateUserRequest") $
+        mempty
           & type_ ?~ OpenApiObject
-          & properties .~ InsOrd.fromList
-              [ ("email", emailSchema)
-              , ("username", usernameSchema)
-              , ("password", passwordSchema)
-              , ("bio", bioSchema)
-              , ("image", imageSchema)
-              ]
-    return $ NamedSchema (Just "UpdateUserRequest") $ mempty
-      & type_ ?~ OpenApiObject
-      & properties .~ InsOrd.fromList [("user", Inline userSchema)]
-      & required .~ ["user"]
-
+          & properties .~ InsOrd.fromList [("user", Inline userSchema)]
+          & required .~ ["user"]

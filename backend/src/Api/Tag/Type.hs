@@ -1,5 +1,7 @@
 module Api.Tag.Type where
 
+import Api.TagCombinator (Tag)
+
 import GHC.Generics (Generic)
 import Servant
   ( Description
@@ -18,6 +20,7 @@ data TagRoute mode = TagRoute
         :- "tags"
           :> Summary "Get Tags"
           :> Description "Get a list of all tags"
+          :> Tag "Tags"
           :> Get '[JSON] TagListResponse
   -- ^ GET /api/tags
   }

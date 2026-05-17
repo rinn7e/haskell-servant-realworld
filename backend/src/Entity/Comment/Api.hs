@@ -11,7 +11,6 @@ import Control.Lens ((&), (.~), (?~))
 import Data.Aeson (FromJSON (..), ToJSON (..), (.:), (.=))
 import Data.Aeson qualified as A
 import Data.HashMap.Strict.InsOrd qualified as InsOrd
-import Data.Proxy (Proxy (..))
 import Data.OpenApi
   ( NamedSchema (..)
   , OpenApiType (..)
@@ -22,6 +21,7 @@ import Data.OpenApi
   , required
   , type_
   )
+import Data.Proxy (Proxy (..))
 import Data.Text (Text)
 import Data.Time (UTCTime)
 import Database.Persist.Sql (Entity (..), SqlPersistT, fromSqlKey)
@@ -81,15 +81,17 @@ instance FromJSON NewCommentRequest where
 instance ToSchema NewCommentRequest where
   declareNamedSchema _ = do
     bodySchema <- declareSchemaRef (Proxy @Text)
-    let commentSchema = mempty
+    let commentSchema =
+          mempty
+            & type_ ?~ OpenApiObject
+            & properties .~ InsOrd.fromList [("body", bodySchema)]
+            & required .~ ["body"]
+    return $
+      NamedSchema (Just "NewCommentRequest") $
+        mempty
           & type_ ?~ OpenApiObject
-          & properties .~ InsOrd.fromList [("body", bodySchema)]
-          & required .~ ["body"]
-    return $ NamedSchema (Just "NewCommentRequest") $ mempty
-      & type_ ?~ OpenApiObject
-      & properties .~ InsOrd.fromList [("comment", Inline commentSchema)]
-      & required .~ ["comment"]
-
+          & properties .~ InsOrd.fromList [("comment", Inline commentSchema)]
+          & required .~ ["comment"]
 
 -------------------------------
 -- Helpers

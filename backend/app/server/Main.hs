@@ -22,7 +22,6 @@ import Servant (Context (..))
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import RunServer (AppEnv (..), runServerWithOpenApi, APIWithOpenApi)
 import Common.Type.Config (Config (..), loadConfig)
 import Common.Type.JWK (makeSecretKey)
 import DB.Migration
@@ -32,6 +31,7 @@ import DB.Migration
   , runMigrationsUp
   )
 import DB.Schema.Type (migrateAll)
+import RunServer (APIWithOpenApi, AppEnv (..), runServerWithOpenApi)
 import Type
 
 main :: IO ()

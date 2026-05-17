@@ -1,7 +1,20 @@
 module Entity.User.Api where
 
+import Control.Lens ((&), (.~), (?~))
 import Data.Aeson (FromJSON (..), ToJSON (..), (.:), (.:?))
 import Data.Aeson qualified as A
+import Data.HashMap.Strict.InsOrd qualified as InsOrd
+import Data.Proxy (Proxy (..))
+import Data.OpenApi
+  ( NamedSchema (..)
+  , OpenApiType (..)
+  , Referenced (..)
+  , ToSchema (..)
+  , declareSchemaRef
+  , properties
+  , required
+  , type_
+  )
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
@@ -15,7 +28,7 @@ data User = User
   , bio :: Maybe Text
   , image :: Maybe Text
   }
-  deriving (Show, Generic)
+  deriving (Show, Generic, ToSchema)
 
 instance ToJSON User where
   toJSON = A.genericToJSON A.defaultOptions
@@ -23,7 +36,7 @@ instance ToJSON User where
 -------------------------------
 -- UserResponse
 -------------------------------
-data UserResponse = UserResponse {user :: User} deriving (Show, Generic, ToJSON)
+data UserResponse = UserResponse {user :: User} deriving (Show, Generic, ToJSON, ToSchema)
 
 -------------------------------
 -- Profile
@@ -34,7 +47,7 @@ data Profile = Profile
   , image :: Maybe Text
   , following :: Bool
   }
-  deriving (Show, Generic)
+  deriving (Show, Generic, ToSchema)
 
 instance ToJSON Profile where
   toJSON = A.genericToJSON A.defaultOptions
@@ -43,7 +56,7 @@ instance ToJSON Profile where
 -- ProfileResponse
 -------------------------------
 data ProfileResponse = ProfileResponse {profile :: Profile}
-  deriving (Show, Generic, ToJSON)
+  deriving (Show, Generic, ToJSON, ToSchema)
 
 -------------------------------
 -- LoginUserRequest
@@ -59,6 +72,22 @@ instance FromJSON LoginUserRequest where
     u <- o .: "user"
     LoginUserRequest <$> u .: "email" <*> u .: "password"
 
+instance ToSchema LoginUserRequest where
+  declareNamedSchema _ = do
+    emailSchema <- declareSchemaRef (Proxy @Text)
+    passwordSchema <- declareSchemaRef (Proxy @Text)
+    let userSchema = mempty
+          & type_ ?~ OpenApiObject
+          & properties .~ InsOrd.fromList
+              [ ("email", emailSchema)
+              , ("password", passwordSchema)
+              ]
+          & required .~ ["email", "password"]
+    return $ NamedSchema (Just "LoginUserRequest") $ mempty
+      & type_ ?~ OpenApiObject
+      & properties .~ InsOrd.fromList [("user", Inline userSchema)]
+      & required .~ ["user"]
+
 -------------------------------
 -- NewUserRequest
 -------------------------------
@@ -73,6 +102,24 @@ instance FromJSON NewUserRequest where
   parseJSON = A.withObject "NewUserRequest" $ \o -> do
     u <- o .: "user"
     NewUserRequest <$> u .: "username" <*> u .: "email" <*> u .: "password"
+
+instance ToSchema NewUserRequest where
+  declareNamedSchema _ = do
+    usernameSchema <- declareSchemaRef (Proxy @Text)
+    emailSchema <- declareSchemaRef (Proxy @Text)
+    passwordSchema <- declareSchemaRef (Proxy @Text)
+    let userSchema = mempty
+          & type_ ?~ OpenApiObject
+          & properties .~ InsOrd.fromList
+              [ ("username", usernameSchema)
+              , ("email", emailSchema)
+              , ("password", passwordSchema)
+              ]
+          & required .~ ["username", "email", "password"]
+    return $ NamedSchema (Just "NewUserRequest") $ mempty
+      & type_ ?~ OpenApiObject
+      & properties .~ InsOrd.fromList [("user", Inline userSchema)]
+      & required .~ ["user"]
 
 -------------------------------
 -- UpdateUserRequest
@@ -95,3 +142,25 @@ instance FromJSON UpdateUserRequest where
       <*> u .:? "password"
       <*> u .:? "bio"
       <*> u .:? "image"
+
+instance ToSchema UpdateUserRequest where
+  declareNamedSchema _ = do
+    emailSchema <- declareSchemaRef (Proxy @(Maybe Text))
+    usernameSchema <- declareSchemaRef (Proxy @(Maybe Text))
+    passwordSchema <- declareSchemaRef (Proxy @(Maybe Text))
+    bioSchema <- declareSchemaRef (Proxy @(Maybe Text))
+    imageSchema <- declareSchemaRef (Proxy @(Maybe Text))
+    let userSchema = mempty
+          & type_ ?~ OpenApiObject
+          & properties .~ InsOrd.fromList
+              [ ("email", emailSchema)
+              , ("username", usernameSchema)
+              , ("password", passwordSchema)
+              , ("bio", bioSchema)
+              , ("image", imageSchema)
+              ]
+    return $ NamedSchema (Just "UpdateUserRequest") $ mempty
+      & type_ ?~ OpenApiObject
+      & properties .~ InsOrd.fromList [("user", Inline userSchema)]
+      & required .~ ["user"]
+

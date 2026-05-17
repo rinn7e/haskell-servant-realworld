@@ -8,12 +8,25 @@ module Entity.Article.Api
   )
 where
 
+import Control.Lens ((&), (.~), (?~))
 import Data.Aeson (FromJSON (..), ToJSON (..), (.:), (.:?), (.=))
 import Data.Aeson qualified as A
+import Data.HashMap.Strict.InsOrd qualified as InsOrd
 import Data.Map.Append (unAppendMap)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
+import Data.Proxy (Proxy (..))
 import Data.Semigroup (First (..))
+import Data.OpenApi
+  ( NamedSchema (..)
+  , OpenApiType (..)
+  , Referenced (..)
+  , ToSchema (..)
+  , declareSchemaRef
+  , properties
+  , required
+  , type_
+  )
 import Data.Text (Text)
 import Data.Time (UTCTime)
 import Database.Persist.Sql (Entity (..))
@@ -38,7 +51,7 @@ data Article = Article
   , favoritesCount :: Int
   , author :: Profile
   }
-  deriving (Show, Generic)
+  deriving (Show, Generic, ToSchema)
 
 instance ToJSON Article where
   toJSON = A.genericToJSON A.defaultOptions
@@ -47,7 +60,7 @@ instance ToJSON Article where
 -- ArticleResponse
 -------------------------------
 data ArticleResponse = ArticleResponse {article :: Article}
-  deriving (Show, Generic, ToJSON)
+  deriving (Show, Generic, ToJSON, ToSchema)
 
 -------------------------------
 -- ArticleListResponse
@@ -56,7 +69,7 @@ data ArticleListResponse = ArticleListResponse
   { articles :: [Article]
   , articlesCount :: Int
   }
-  deriving (Show, Generic)
+  deriving (Show, Generic, ToSchema)
 
 instance ToJSON ArticleListResponse where
   toJSON (ArticleListResponse as c) =
@@ -85,6 +98,26 @@ instance FromJSON NewArticleRequest where
       <*> a .: "body"
       <*> a .:? "tagList"
 
+instance ToSchema NewArticleRequest where
+  declareNamedSchema _ = do
+    titleSchema <- declareSchemaRef (Proxy @Text)
+    descriptionSchema <- declareSchemaRef (Proxy @Text)
+    bodySchema <- declareSchemaRef (Proxy @Text)
+    tagListSchema <- declareSchemaRef (Proxy @(Maybe [Text]))
+    let articleSchema = mempty
+          & type_ ?~ OpenApiObject
+          & properties .~ InsOrd.fromList
+              [ ("title", titleSchema)
+              , ("description", descriptionSchema)
+              , ("body", bodySchema)
+              , ("tagList", tagListSchema)
+              ]
+          & required .~ ["title", "description", "body"]
+    return $ NamedSchema (Just "NewArticleRequest") $ mempty
+      & type_ ?~ OpenApiObject
+      & properties .~ InsOrd.fromList [("article", Inline articleSchema)]
+      & required .~ ["article"]
+
 -------------------------------
 -- UpdateArticleRequest
 -------------------------------
@@ -104,6 +137,26 @@ instance FromJSON UpdateArticleRequest where
       <*> a .:? "description"
       <*> a .:? "body"
       <*> a .:? "tagList"
+
+instance ToSchema UpdateArticleRequest where
+  declareNamedSchema _ = do
+    titleSchema <- declareSchemaRef (Proxy @(Maybe Text))
+    descriptionSchema <- declareSchemaRef (Proxy @(Maybe Text))
+    bodySchema <- declareSchemaRef (Proxy @(Maybe Text))
+    tagListSchema <- declareSchemaRef (Proxy @(Maybe [Text]))
+    let articleSchema = mempty
+          & type_ ?~ OpenApiObject
+          & properties .~ InsOrd.fromList
+              [ ("title", titleSchema)
+              , ("description", descriptionSchema)
+              , ("body", bodySchema)
+              , ("tagList", tagListSchema)
+              ]
+    return $ NamedSchema (Just "UpdateArticleRequest") $ mempty
+      & type_ ?~ OpenApiObject
+      & properties .~ InsOrd.fromList [("article", Inline articleSchema)]
+      & required .~ ["article"]
+
 
 -------------------------------
 -- Helpers

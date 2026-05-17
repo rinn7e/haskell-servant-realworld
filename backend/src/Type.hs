@@ -2,12 +2,14 @@ module Type
   ( API
   , AppApi
   , AppRoute (..)
+  , APIWithOpenApi
   ) where
 
 import GHC.Generics (Generic)
-import Servant (GenericMode (type (:-)), NamedRoutes, (:>))
+import Servant (GenericMode (type (:-)), NamedRoutes, (:<|>), (:>))
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
+import Servant.Swagger.UI (SwaggerSchemaUI)
 
 import Api.Article.Type (ArticleRoute)
 import Api.Auth.Type (AuthRoute)
@@ -28,3 +30,6 @@ data AppRoute mode = AppRoute
   deriving stock (Generic)
 
 type API = "api" :> AppApi '[S.JWT]
+
+type APIWithOpenApi = API :<|> SwaggerSchemaUI "swagger-ui" "swagger.json"
+

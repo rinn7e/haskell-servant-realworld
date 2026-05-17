@@ -5,6 +5,7 @@ import GHC.Generics (Generic)
 import Servant
   ( Capture
   , Delete
+  , Description
   , GenericMode (type (:-))
   , Get
   , JSON
@@ -14,6 +15,7 @@ import Servant
   , Put
   , QueryParam
   , ReqBody
+  , Summary
   , (:>)
   )
 import Servant qualified as S
@@ -31,6 +33,8 @@ data ArticleRoute mode = ArticleRoute
       :: mode
         :- "articles"
           :> "feed"
+          :> Summary "Get Feed"
+          :> Description "Get a feed of recent articles from followed users"
           :> QueryParam "limit" Int
           :> QueryParam "offset" Int
           :> Get '[JSON] ArticleListResponse
@@ -38,6 +42,8 @@ data ArticleRoute mode = ArticleRoute
   , getArticleList
       :: mode
         :- "articles"
+          :> Summary "Get Articles"
+          :> Description "Get a list of recent articles"
           :> QueryParam "tag" Text
           :> QueryParam "author" Text
           :> QueryParam "favorited" Text
@@ -47,30 +53,54 @@ data ArticleRoute mode = ArticleRoute
   -- ^ GET /api/articles
   , createArticle
       :: mode
-        :- "articles" :> ReqBody '[JSON] NewArticleRequest :> PostCreated '[JSON] ArticleResponse
+        :- "articles"
+          :> Summary "Create Article"
+          :> Description "Create a new article"
+          :> ReqBody '[JSON] NewArticleRequest
+          :> PostCreated '[JSON] ArticleResponse
   -- ^ POST /api/articles
   , getArticleOne
       :: mode
-        :- "articles" :> Capture "slug" Text :> Get '[JSON] ArticleResponse
+        :- "articles"
+          :> Capture "slug" Text
+          :> Summary "Get Article"
+          :> Description "Get a single article by slug"
+          :> Get '[JSON] ArticleResponse
   -- ^ GET /api/articles/:slug
   , updateArticle
       :: mode
         :- "articles"
           :> Capture "slug" Text
+          :> Summary "Update Article"
+          :> Description "Update an article by slug"
           :> ReqBody '[JSON] UpdateArticleRequest
           :> Put '[JSON] ArticleResponse
   -- ^ PUT /api/articles/:slug
   , deleteArticle
       :: mode
-        :- "articles" :> Capture "slug" Text :> Delete '[JSON] S.NoContent
+        :- "articles"
+          :> Capture "slug" Text
+          :> Summary "Delete Article"
+          :> Description "Delete an article by slug"
+          :> Delete '[JSON] S.NoContent
   -- ^ DELETE /api/articles/:slug
   , favoriteArticle
       :: mode
-        :- "articles" :> Capture "slug" Text :> "favorite" :> Post '[JSON] ArticleResponse
+        :- "articles"
+          :> Capture "slug" Text
+          :> "favorite"
+          :> Summary "Favorite Article"
+          :> Description "Favorite an article by slug"
+          :> Post '[JSON] ArticleResponse
   -- ^ POST /api/articles/:slug/favorite
   , unfavoriteArticle
       :: mode
-        :- "articles" :> Capture "slug" Text :> "favorite" :> Delete '[JSON] ArticleResponse
+        :- "articles"
+          :> Capture "slug" Text
+          :> "favorite"
+          :> Summary "Unfavorite Article"
+          :> Description "Unfavorite an article by slug"
+          :> Delete '[JSON] ArticleResponse
   -- ^ DELETE /api/articles/:slug/favorite
   , comments
       :: mode :- "articles" :> Capture "slug" Text :> "comments" :> NamedRoutes CommentRoute
@@ -79,12 +109,25 @@ data ArticleRoute mode = ArticleRoute
   deriving stock (Generic)
 
 data CommentRoute mode = CommentRoute
-  { getCommentList :: mode :- Get '[JSON] CommentListResponse
+  { getCommentList
+      :: mode
+        :- Summary "Get Comments"
+          :> Description "Get comments for an article"
+          :> Get '[JSON] CommentListResponse
   -- ^ GET /api/articles/:slug/comments
   , createComment
-      :: mode :- ReqBody '[JSON] NewCommentRequest :> PostCreated '[JSON] CommentResponse
+      :: mode
+        :- Summary "Create Comment"
+          :> Description "Create a comment for an article"
+          :> ReqBody '[JSON] NewCommentRequest
+          :> PostCreated '[JSON] CommentResponse
   -- ^ POST /api/articles/:slug/comments
-  , deleteComment :: mode :- Capture "id" Int :> Delete '[JSON] S.NoContent
+  , deleteComment
+      :: mode
+        :- Capture "id" Int
+          :> Summary "Delete Comment"
+          :> Description "Delete a comment for an article"
+          :> Delete '[JSON] S.NoContent
   -- ^ DELETE /api/articles/:slug/comments/:id
   }
   deriving stock (Generic)

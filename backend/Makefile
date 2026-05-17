@@ -1,8 +1,20 @@
-.PHONY: build watch server server-watch resetdb seed migrate-generate migrate-up migrate-down migrate-check lint format build-haddock build-hoogle hoogle test compile install exec run-installed
+.PHONY: build watch server server-watch resetdb seed migrate-generate migrate-up migrate-down migrate-check lint format build-haddock build-hoogle hoogle test compile install exec run-installed swagger-yaml swagger-json
 
 # Build with fast compilation
 build:
 	stack build --fast
+
+# Generate OpenAPI 3.0 specification in YAML format
+swagger-yaml:
+	stack repl haskell-servant-realworld:lib --package yaml --ghc-options="-e \"import Api.OpenApi (openApiSpec)\" -e \"import Data.Yaml qualified as Y\" -e \"import Data.ByteString.Char8 qualified as BS\" -e \"BS.writeFile \\\"swagger.yaml\\\" (Y.encode openApiSpec)\""
+	@echo "Generated swagger.yaml successfully!"
+
+# Generate OpenAPI 3.0 specification in JSON format
+swagger-json:
+	stack repl haskell-servant-realworld:lib --package aeson-pretty --ghc-options="-e \"import Api.OpenApi (openApiSpec)\" -e \"import Data.Aeson.Encode.Pretty qualified as AP\" -e \"import Data.ByteString.Lazy.Char8 qualified as BSL\" -e \"BSL.writeFile \\\"swagger.json\\\" (AP.encodePretty openApiSpec)\""
+	@echo "Generated swagger.json successfully!"
+
+
 
 # Build and watch for changes
 watch:

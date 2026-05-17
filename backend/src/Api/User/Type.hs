@@ -5,32 +5,60 @@ import GHC.Generics (Generic)
 import Servant
   ( Capture
   , Delete
+  , Description
   , GenericMode (type (:-))
   , Get
   , JSON
   , Post
   , Put
   , ReqBody
+  , Summary
   , (:>)
   )
 
 import Entity.User.Api (ProfileResponse, UpdateUserRequest, UserResponse)
 
 data UserRoute mode = UserRoute
-  { getCurrentUser :: mode :- "user" :> Get '[JSON] UserResponse
+  { getCurrentUser
+      :: mode
+        :- "user"
+          :> Summary "Get Current User"
+          :> Description "Get the currently logged-in user details"
+          :> Get '[JSON] UserResponse
   -- ^ GET /api/user
   , updateCurrentUser
-      :: mode :- "user" :> ReqBody '[JSON] UpdateUserRequest :> Put '[JSON] UserResponse
+      :: mode
+        :- "user"
+          :> Summary "Update Current User"
+          :> Description "Update the currently logged-in user details"
+          :> ReqBody '[JSON] UpdateUserRequest
+          :> Put '[JSON] UserResponse
   -- ^ PUT /api/user
   , getUserByName
-      :: mode :- "profiles" :> Capture "username" Text :> Get '[JSON] ProfileResponse
+      :: mode
+        :- "profiles"
+          :> Capture "username" Text
+          :> Summary "Get Profile"
+          :> Description "Get a user profile by username"
+          :> Get '[JSON] ProfileResponse
   -- ^ GET /api/profiles/:username
   , followUser
-      :: mode :- "profiles" :> Capture "username" Text :> "follow" :> Post '[JSON] ProfileResponse
+      :: mode
+        :- "profiles"
+          :> Capture "username" Text
+          :> "follow"
+          :> Summary "Follow User"
+          :> Description "Follow a user by username"
+          :> Post '[JSON] ProfileResponse
   -- ^ POST /api/profiles/:username/follow
   , unfollowUser
       :: mode
-        :- "profiles" :> Capture "username" Text :> "follow" :> Delete '[JSON] ProfileResponse
+        :- "profiles"
+          :> Capture "username" Text
+          :> "follow"
+          :> Summary "Unfollow User"
+          :> Description "Unfollow a user by username"
+          :> Delete '[JSON] ProfileResponse
   -- ^ DELETE /api/profiles/:username/follow
   }
   deriving stock (Generic)

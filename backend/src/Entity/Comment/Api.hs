@@ -7,8 +7,21 @@ module Entity.Comment.Api
   )
 where
 
+import Control.Lens ((&), (.~), (?~))
 import Data.Aeson (FromJSON (..), ToJSON (..), (.:), (.=))
 import Data.Aeson qualified as A
+import Data.HashMap.Strict.InsOrd qualified as InsOrd
+import Data.Proxy (Proxy (..))
+import Data.OpenApi
+  ( NamedSchema (..)
+  , OpenApiType (..)
+  , Referenced (..)
+  , ToSchema (..)
+  , declareSchemaRef
+  , properties
+  , required
+  , type_
+  )
 import Data.Text (Text)
 import Data.Time (UTCTime)
 import Database.Persist.Sql (Entity (..), SqlPersistT, fromSqlKey)
@@ -30,7 +43,7 @@ data Comment = Comment
   , body :: Text
   , author :: Profile
   }
-  deriving (Show, Generic)
+  deriving (Show, Generic, ToSchema)
 
 instance ToJSON Comment where
   toJSON = A.genericToJSON A.defaultOptions
@@ -39,7 +52,7 @@ instance ToJSON Comment where
 -- CommentResponse
 -------------------------------
 data CommentResponse = CommentResponse {comment :: Comment}
-  deriving (Show, Generic, ToJSON)
+  deriving (Show, Generic, ToJSON, ToSchema)
 
 -------------------------------
 -- CommentListResponse
@@ -47,7 +60,7 @@ data CommentResponse = CommentResponse {comment :: Comment}
 data CommentListResponse = CommentListResponse
   { comments :: [Comment]
   }
-  deriving (Show, Generic)
+  deriving (Show, Generic, ToSchema)
 
 instance ToJSON CommentListResponse where
   toJSON (CommentListResponse cs) = A.object ["comments" .= cs]
@@ -64,6 +77,19 @@ instance FromJSON NewCommentRequest where
   parseJSON = A.withObject "NewCommentRequest" $ \o -> do
     c <- o .: "comment"
     NewCommentRequest <$> c .: "body"
+
+instance ToSchema NewCommentRequest where
+  declareNamedSchema _ = do
+    bodySchema <- declareSchemaRef (Proxy @Text)
+    let commentSchema = mempty
+          & type_ ?~ OpenApiObject
+          & properties .~ InsOrd.fromList [("body", bodySchema)]
+          & required .~ ["body"]
+    return $ NamedSchema (Just "NewCommentRequest") $ mempty
+      & type_ ?~ OpenApiObject
+      & properties .~ InsOrd.fromList [("comment", Inline commentSchema)]
+      & required .~ ["comment"]
+
 
 -------------------------------
 -- Helpers

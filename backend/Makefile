@@ -1,4 +1,4 @@
-.PHONY: build watch server server-watch resetdb seed migrate-generate migrate-up migrate-down migrate-check lint format build-haddock build-hoogle hoogle test compile install exec run-installed swagger-web swagger-admin
+.PHONY: build watch server server-watch resetdb seed migrate-generate migrate-up migrate-up-one migrate-down-one migrate-status lint format build-haddock build-hoogle hoogle test compile install exec run-installed swagger-web swagger-admin
 
 # Build with fast compilation
 build:
@@ -31,6 +31,10 @@ server-watch:
 # Reset database and start dev server
 resetdb:
 	./my-scripts/resetdb.sh
+
+# Reset database and start dev server
+resetdb-seed:
+	./my-scripts/resetdb.sh
 	$(MAKE) migrate-up
 	$(MAKE) seed
 	$(MAKE) server
@@ -48,13 +52,17 @@ migrate-generate:
 migrate-up:
 	stack build --fast && stack exec migrate-exe -- up
 
-# Run a single down migration
-migrate-down:
-	stack build --fast && stack exec migrate-exe -- down
+# Run a single pending up migration
+migrate-up-one:
+	stack build --fast && stack exec migrate-exe -- up-one
 
-# Check for schema mismatches
-migrate-check:
-	stack build --fast && stack exec migrate-exe -- check
+# Run a single down migration
+migrate-down-one:
+	stack build --fast && stack exec migrate-exe -- down-one
+
+# Check migration status and schema mismatches
+migrate-status:
+	stack build --fast && stack exec migrate-exe -- status
 
 # Lint Haskell code
 lint:

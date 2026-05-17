@@ -27,7 +27,6 @@ import Common.Type.JWK (makeSecretKey)
 import DB.Migration
   ( generateMigration
   , getPendingMigrations
-  , runMigrationsDown
   , runMigrationsUp
   )
 import DB.Schema.Type (migrateAll)

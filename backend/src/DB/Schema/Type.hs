@@ -87,6 +87,7 @@ Favorite
     articleId ArticleId
     UniqueFavorite userId articleId
     deriving Show Generic
+
 |]
 
 instance ToJWT UserId

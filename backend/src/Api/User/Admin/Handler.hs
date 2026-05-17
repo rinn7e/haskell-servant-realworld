@@ -22,6 +22,11 @@ import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
 import Api.User.Admin.Type
+import Entity.User.Api
+  ( AdminUserListResponse (..)
+  , AdminUserResponse (..)
+  , UpdateUserRoleRequest (..)
+  )
 import Common.Type.App (App)
 import Common.Util.Guard (guardAdmin)
 import DB.Schema.Type (UserId)
@@ -36,23 +41,34 @@ adminUserRoute auth =
     , deleteUser = deleteUserHandler auth
     }
 
-getUsersHandler :: S.AuthResult UserId -> Maybe Int -> App AdminUserListResponse
-getUsersHandler (S.Authenticated uid) mPage = do
+getUsersHandler
+  :: S.AuthResult UserId
+  -> Maybe Int
+  -> Maybe Text
+  -> Maybe Text
+  -> App AdminUserListResponse
+getUsersHandler (S.Authenticated uid) mPage mUsername mEmail = do
   guardAdmin uid
   let page = maybe 1 id mPage
       pageSize = 10
       offset = (page - 1) * pageSize
 
+  let filters =
+        concat
+          [ maybe [] (\u -> [DB.UserUsername ==. u]) mUsername
+          , maybe [] (\e -> [DB.UserEmail ==. e]) mEmail
+          ]
+
   runDB $ do
-    totalCount <- fromIntegral <$> count ([] :: [Filter DB.User])
-    entities <- selectList [] [Asc DB.UserUsername, LimitTo pageSize, OffsetBy offset]
+    totalCount <- fromIntegral <$> count filters
+    entities <- selectList filters [Asc DB.UserUsername, LimitTo pageSize, OffsetBy offset]
     let users = map toAdminUserResponse entities
     return
       AdminUserListResponse
         { users = users
         , totalCount = totalCount
         }
-getUsersHandler _ _ = throwError S.err401
+getUsersHandler _ _ _ _ = throwError S.err401
 
 updateUserRoleHandler
   :: S.AuthResult UserId -> Int -> UpdateUserRoleRequest -> App AdminUserResponse
@@ -107,13 +123,13 @@ deleteUserHandler (S.Authenticated uid) targetUidInt = do
         deleteWhere [DB.FollowFollowerId ==. targetUid]
         deleteWhere [DB.FollowFollowedId ==. targetUid]
 
-        -- 5. Ban the actual user record
+        -- 5. Delete the actual user record
         delete targetUid
 
         -- 6. Log the audit event
         _ <-
           insert $
-            DB.Log "INFO" ("Banned/Deleted user account: " <> target.username) "AUTH" now (Just uid)
+            DB.Log "INFO" ("Deleted user account: " <> target.username) "AUTH" now (Just uid)
         return ()
 
       return S.NoContent

@@ -4,6 +4,8 @@ module Entity.Comment.Api
   , CommentListResponse (..)
   , NewCommentRequest (..)
   , toCommentResponse
+  , AdminCommentResponse (..)
+  , AdminCommentListResponse (..)
   )
 where
 
@@ -107,3 +109,24 @@ toCommentResponse _ mCurrentUserId (Entity cid comm, Entity _ author) = do
   let profile = Profile author.username author.bio author.image isFol
   return $
     Comment (fromIntegral (fromSqlKey cid)) comm.createdAt comm.updatedAt comm.body profile
+
+-------------------------------
+-- Admin Comment
+-------------------------------
+
+data AdminCommentResponse = AdminCommentResponse
+  { id :: Int
+  , body :: Text
+  , createdAt :: UTCTime
+  , articleSlug :: Text
+  , authorUsername :: Text
+  }
+  deriving stock (Show, Generic)
+  deriving anyclass (ToJSON, ToSchema)
+
+data AdminCommentListResponse = AdminCommentListResponse
+  { comments :: [AdminCommentResponse]
+  , totalCount :: Int
+  }
+  deriving stock (Show, Generic)
+  deriving anyclass (ToJSON, ToSchema)

@@ -5,6 +5,8 @@ module Entity.Article.Api
   , NewArticleRequest (..)
   , UpdateArticleRequest (..)
   , toArticleResponse
+  , AdminArticle (..)
+  , AdminArticleListResponse (..)
   )
 where
 
@@ -34,7 +36,7 @@ import GHC.Generics (Generic)
 
 import DB.Schema.Type qualified as DB
 import Entity.Article.Type (ArticleGrouped)
-import Entity.User.Api (Profile (..))
+import Entity.User.Api (Profile (..), AdminUserResponse (..))
 
 -------------------------------
 -- Article
@@ -189,3 +191,29 @@ toArticleResponse
           isFav
           (fromMaybe 0 favCount)
           profile
+
+-------------------------------
+-- Admin Article
+-------------------------------
+
+data AdminArticle = AdminArticle
+  { slug :: Text
+  , title :: Text
+  , description :: Text
+  , body :: Text
+  , tagList :: [Text]
+  , createdAt :: UTCTime
+  , updatedAt :: UTCTime
+  , favorited :: Bool
+  , favoritesCount :: Int
+  , author :: AdminUserResponse
+  }
+  deriving stock (Show, Generic)
+  deriving anyclass (ToJSON, ToSchema)
+
+data AdminArticleListResponse = AdminArticleListResponse
+  { articles :: [AdminArticle]
+  , articlesCount :: Int
+  }
+  deriving stock (Show, Generic)
+  deriving anyclass (ToJSON, ToSchema)

@@ -1,6 +1,5 @@
 module Api.User.Admin.Type where
 
-import Data.Aeson (FromJSON (..), ToJSON (..))
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Servant
@@ -19,40 +18,22 @@ import Servant
 import Servant qualified as S
 
 import Api.TagCombinator (Tag)
-import Data.OpenApi (ToSchema (..))
-
-data UpdateUserRoleRequest = UpdateUserRoleRequest
-  { role :: Text
-  }
-  deriving stock (Show, Generic)
-  deriving anyclass (FromJSON, ToJSON, ToSchema)
-
-data AdminUserResponse = AdminUserResponse
-  { id :: Int
-  , username :: Text
-  , email :: Text
-  , bio :: Maybe Text
-  , image :: Maybe Text
-  , role :: Text
-  }
-  deriving stock (Show, Generic)
-  deriving anyclass (ToJSON, ToSchema)
-
-data AdminUserListResponse = AdminUserListResponse
-  { users :: [AdminUserResponse]
-  , totalCount :: Int
-  }
-  deriving stock (Show, Generic)
-  deriving anyclass (ToJSON, ToSchema)
+import Entity.User.Api
+  ( AdminUserListResponse (..)
+  , AdminUserResponse (..)
+  , UpdateUserRoleRequest (..)
+  )
 
 data AdminUserRoute mode = AdminUserRoute
   { getUsers
       :: mode
         :- "users"
           :> Summary "Get All Users"
-          :> Description "Retrieve all registered users with pagination"
+          :> Description "Retrieve all registered users with pagination and keyword filters"
           :> Tag "Admin Users"
           :> QueryParam "page" Int
+          :> QueryParam "username" Text
+          :> QueryParam "email" Text
           :> Get '[JSON] AdminUserListResponse
   , updateUserRole
       :: mode
@@ -68,8 +49,8 @@ data AdminUserRoute mode = AdminUserRoute
       :: mode
         :- "users"
           :> Capture "id" Int
-          :> Summary "Ban User"
-          :> Description "Permanently delete/ban a user from the platform"
+          :> Summary "Delete User"
+          :> Description "Permanently delete a user from the platform"
           :> Tag "Admin Users"
           :> Delete '[JSON] S.NoContent
   }

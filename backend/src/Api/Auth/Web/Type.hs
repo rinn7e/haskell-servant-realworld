@@ -1,4 +1,4 @@
-module Api.Auth.Type where
+module Api.Auth.Web.Type where
 
 import Api.TagCombinator (Tag)
 

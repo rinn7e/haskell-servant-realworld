@@ -1,10 +1,10 @@
-module Api.Tag.Handler where
+module Api.Tag.Web.Handler where
 
 import Servant (NamedRoutes)
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Tag.Type
+import Api.Tag.Web.Type
 import Common.Type.App (App)
 import DB.Schema.Type (UserId)
 import DB.Util (runDB)

@@ -1,6 +1,28 @@
 {-# LANGUAGE TypeApplications #-}
 
-module Entity.Article.Query where
+module Entity.Article.Query
+  ( getArticleBySlug
+  , getArticleBySlugSQL
+  , getArticleWithAuthor
+  , getArticleWithAuthorSQL
+  , listArticles
+  , listArticlesSQL
+  , listFeed
+  , listFeedSQL
+  , applyArticleFilters
+  , filterArticlesIdsSQL
+  , countArticles
+  , countFeed
+  , feedArticlesIdsSQL
+  , countFavoritesExpr
+  , isFavoritedByExpr
+  , isFollowingUserExpr
+  , getArticleTags
+  , getArticleTagsSQL
+  , listAdminArticles
+  , countAdminArticles
+  )
+where
 
 import Control.Monad (when)
 import Data.Foldable (for_)
@@ -8,6 +30,7 @@ import Data.Map.Append (AppendMap (..), unAppendMap)
 import Data.Map.Strict qualified as Map
 import Data.Ord (Down)
 import Data.Text (Text)
+import Data.Text qualified as T
 import Data.Time (UTCTime)
 import Database.Esqueleto.Experimental
 import Debug.Trace (traceM)
@@ -284,3 +307,76 @@ getArticleTagsSQL aid = do
         `innerJoin` table @Tag `on` (\(at :& t) -> at ^. ArticleTagTagId ==. t ^. TagId)
   where_ (at ^. ArticleTagArticleId ==. val aid)
   return (t ^. TagName)
+
+applyAdminArticleFilters
+  :: Maybe Text
+  -> Maybe Text
+  -> Maybe Text
+  -> SqlExpr (Entity Article)
+  -> SqlQuery ()
+applyAdminArticleFilters mTag mAuthor mSearch article = do
+  applyArticleFilters mTag mAuthor Nothing article
+  for_ mSearch \query -> do
+    let keyword = "%" <> T.toLower query <> "%"
+    where_ ((lower_ (article ^. ArticleTitle) `like` val keyword) ||. (lower_ (article ^. ArticleDescription) `like` val keyword))
+
+listAdminArticles
+  :: Maybe Text
+  -> Maybe Text
+  -> Maybe Text
+  -> Int
+  -> Int
+  -> SqlPersistT IO (AppendMap (Down UTCTime, ArticleId) ArticleGrouped)
+listAdminArticles mTag mAuthor mSearch lim off = do
+  result <- select $ do
+    (((article :& author) :& articleTag) :& tag) <-
+      from $
+        table @Article
+          `innerJoin` table @User `on` (\(art :& auth) -> art ^. ArticleAuthorId ==. auth ^. UserId)
+          `leftJoin` table @ArticleTag
+            `on` (\(art :& _ :& at) -> just (art ^. ArticleId) ==. at ?. ArticleTagArticleId)
+          `leftJoin` table @Tag `on` (\(_ :& _ :& at :& t) -> at ?. ArticleTagTagId ==. t ?. TagId)
+
+    where_
+      ( article
+          ^. ArticleId
+          `in_` subList_select (filterAdminArticlesIdsSQL mTag mAuthor mSearch lim off)
+      )
+
+    return
+      ( article
+      , author
+      , tag
+      , countFavoritesExpr (article ^. ArticleId)
+      , val False
+      , val False
+      )
+  let result2 = mconcat $ map mkArticleGrouped result
+  pure result2
+
+filterAdminArticlesIdsSQL
+  :: Maybe Text
+  -> Maybe Text
+  -> Maybe Text
+  -> Int
+  -> Int
+  -> SqlQuery (SqlExpr (Value ArticleId))
+filterAdminArticlesIdsSQL mTag mAuthor mSearch lim off = do
+  article <- from $ table @Article
+  applyAdminArticleFilters mTag mAuthor mSearch article
+  orderBy [desc (article ^. ArticleCreatedAt)]
+  when (lim > 0) $ limit (fromIntegral lim)
+  when (off > 0) $ offset (fromIntegral off)
+  return (article ^. ArticleId)
+
+countAdminArticles
+  :: (MonadUnliftIO m) => Maybe Text -> Maybe Text -> Maybe Text -> SqlPersistT m Int
+countAdminArticles mTag mAuthor mSearch = do
+  res <- select $ do
+    article <- from $ table @Article
+    applyAdminArticleFilters mTag mAuthor mSearch article
+    return countRows
+  return $ maybe 0 unValue (headMay res)
+ where
+  headMay (x : _) = Just x
+  headMay [] = Nothing

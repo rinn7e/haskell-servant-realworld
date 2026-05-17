@@ -1,4 +1,4 @@
-module Api.Auth.Handler where
+module Api.Auth.Web.Handler where
 
 import Data.Password.Argon2
   ( PasswordCheck (..)
@@ -16,7 +16,7 @@ import Servant (NamedRoutes)
 import Servant qualified as S
 import Servant.Auth.Server qualified as S
 
-import Api.Auth.Type
+import Api.Auth.Web.Type
 import Common.Type.App (App, AppEnv (..))
 import Common.Type.JWK (generateToken)
 import DB.Schema.Type (UserId)

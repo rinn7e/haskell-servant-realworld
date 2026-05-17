@@ -42,6 +42,7 @@ dependencies:
   - servant-swagger-ui
   - insert-ordered-containers
   - raw-strings-qq
+  - http-api-data
 
 default-extensions:
   - BlockArguments

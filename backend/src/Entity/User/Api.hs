@@ -1,4 +1,16 @@
-module Entity.User.Api where
+module Entity.User.Api
+  ( User (..)
+  , UserResponse (..)
+  , Profile (..)
+  , ProfileResponse (..)
+  , LoginUserRequest (..)
+  , NewUserRequest (..)
+  , UpdateUserRequest (..)
+  , UpdateUserRoleRequest (..)
+  , AdminUserResponse (..)
+  , AdminUserListResponse (..)
+  )
+where
 
 import Control.Lens ((&), (.~), (?~))
 import Data.Aeson (FromJSON (..), ToJSON (..), (.:), (.:?))
@@ -175,3 +187,31 @@ instance ToSchema UpdateUserRequest where
           & type_ ?~ OpenApiObject
           & properties .~ InsOrd.fromList [("user", Inline userSchema)]
           & required .~ ["user"]
+
+-------------------------------
+-- Admin User
+-------------------------------
+
+data UpdateUserRoleRequest = UpdateUserRoleRequest
+  { role :: Text
+  }
+  deriving stock (Show, Generic)
+  deriving anyclass (FromJSON, ToJSON, ToSchema)
+
+data AdminUserResponse = AdminUserResponse
+  { id :: Int
+  , username :: Text
+  , email :: Text
+  , bio :: Maybe Text
+  , image :: Maybe Text
+  , role :: Text
+  }
+  deriving stock (Show, Generic)
+  deriving anyclass (ToJSON, ToSchema)
+
+data AdminUserListResponse = AdminUserListResponse
+  { users :: [AdminUserResponse]
+  , totalCount :: Int
+  }
+  deriving stock (Show, Generic)
+  deriving anyclass (ToJSON, ToSchema)

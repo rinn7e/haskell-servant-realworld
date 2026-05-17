@@ -1,5 +1,57 @@
 components:
   schemas:
+    AdminArticle:
+      properties:
+        author:
+          $ref: '#/components/schemas/AdminUserResponse'
+        body:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/UTCTime'
+        description:
+          type: string
+        favorited:
+          type: boolean
+        favoritesCount:
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          type: integer
+        slug:
+          type: string
+        tagList:
+          items:
+            type: string
+          type: array
+        title:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/UTCTime'
+      required:
+      - slug
+      - title
+      - description
+      - body
+      - tagList
+      - createdAt
+      - updatedAt
+      - favorited
+      - favoritesCount
+      - author
+      type: object
+    AdminArticleListResponse:
+      properties:
+        articles:
+          items:
+            $ref: '#/components/schemas/AdminArticle'
+          type: array
+        articlesCount:
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          type: integer
+      required:
+      - articles
+      - articlesCount
+      type: object
     AdminCommentListResponse:
       properties:
         comments:
@@ -71,58 +123,6 @@ components:
       - email
       - role
       type: object
-    Article:
-      properties:
-        author:
-          $ref: '#/components/schemas/Profile'
-        body:
-          type: string
-        createdAt:
-          $ref: '#/components/schemas/UTCTime'
-        description:
-          type: string
-        favorited:
-          type: boolean
-        favoritesCount:
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          type: integer
-        slug:
-          type: string
-        tagList:
-          items:
-            type: string
-          type: array
-        title:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/UTCTime'
-      required:
-      - slug
-      - title
-      - description
-      - body
-      - tagList
-      - createdAt
-      - updatedAt
-      - favorited
-      - favoritesCount
-      - author
-      type: object
-    ArticleListResponse:
-      properties:
-        articles:
-          items:
-            $ref: '#/components/schemas/Article'
-          type: array
-        articlesCount:
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          type: integer
-      required:
-      - articles
-      - articlesCount
-      type: object
     DashboardStatsResponse:
       properties:
         activeUsers24h:
@@ -152,6 +152,13 @@ components:
       - totalVisitors
       - activeUsers24h
       type: object
+    LogLevel:
+      enum:
+      - info
+      - warning
+      - error
+      - fatal
+      type: string
     LogListResponse:
       properties:
         logs:
@@ -173,7 +180,7 @@ components:
           minimum: -9223372036854775808
           type: integer
         level:
-          type: string
+          $ref: '#/components/schemas/LogLevel'
         message:
           type: string
         source:
@@ -205,20 +212,6 @@ components:
           type: object
       required:
       - user
-      type: object
-    Profile:
-      properties:
-        bio:
-          type: string
-        following:
-          type: boolean
-        image:
-          type: string
-        username:
-          type: string
-      required:
-      - username
-      - following
       type: object
     UTCTime:
       example: 2016-07-22T00:00:00Z
@@ -290,6 +283,18 @@ components:
       - path
       - timestamp
       type: object
+    VisitorStatResponse:
+      properties:
+        name:
+          type: string
+        visitors:
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          type: integer
+      required:
+      - name
+      - visitors
+      type: object
   securitySchemes:
     jwt:
       description: 'JWT Bearer token format: Token <JWT_TOKEN>'
@@ -323,15 +328,20 @@ paths:
         required: false
         schema:
           type: string
+      - in: query
+        name: search
+        required: false
+        schema:
+          type: string
       responses:
         '200':
           content:
             application/json;charset=utf-8:
               schema:
-                $ref: '#/components/schemas/ArticleListResponse'
+                $ref: '#/components/schemas/AdminArticleListResponse'
           description: ''
         '400':
-          description: Invalid `author` or `tag` or `page`
+          description: Invalid `search` or `author` or `tag` or `page`
       summary: Get All Articles
       tags:
       - Admin Articles
@@ -356,7 +366,8 @@ paths:
       - Admin Articles
   /api/admin/comments:
     get:
-      description: Retrieve all comments in the system for administrative moderation
+      description: Retrieve all comments in the system with optional author and article
+        filters
       parameters:
       - in: query
         name: page
@@ -365,6 +376,16 @@ paths:
           maximum: 9223372036854775807
           minimum: -9223372036854775808
           type: integer
+      - in: query
+        name: author
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: articleSlug
+        required: false
+        schema:
+          type: string
       responses:
         '200':
           content:
@@ -373,7 +394,7 @@ paths:
                 $ref: '#/components/schemas/AdminCommentListResponse'
           description: ''
         '400':
-          description: Invalid `page`
+          description: Invalid `articleSlug` or `author` or `page`
       summary: Get All Comments
       tags:
       - Admin Comments
@@ -411,6 +432,30 @@ paths:
       summary: Get Dashboard Stats
       tags:
       - Admin Dashboard
+  /api/admin/dashboard/visitor-stats:
+    get:
+      description: Get time-series visitor counts filtered by range (24h, week, month,
+        year)
+      parameters:
+      - in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json;charset=utf-8:
+              schema:
+                items:
+                  $ref: '#/components/schemas/VisitorStatResponse'
+                type: array
+          description: ''
+        '400':
+          description: Invalid `filter`
+      summary: Get Visitor Stats
+      tags:
+      - Admin Dashboard
   /api/admin/login:
     post:
       description: Login with administrative credentials
@@ -446,6 +491,11 @@ paths:
         name: level
         required: false
         schema:
+          enum:
+          - info
+          - warning
+          - error
+          - fatal
           type: string
       - in: query
         name: source
@@ -466,7 +516,7 @@ paths:
       - Admin Dashboard
   /api/admin/users:
     get:
-      description: Retrieve all registered users with pagination
+      description: Retrieve all registered users with pagination and keyword filters
       parameters:
       - in: query
         name: page
@@ -475,6 +525,16 @@ paths:
           maximum: 9223372036854775807
           minimum: -9223372036854775808
           type: integer
+      - in: query
+        name: username
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: email
+        required: false
+        schema:
+          type: string
       responses:
         '200':
           content:
@@ -483,13 +543,13 @@ paths:
                 $ref: '#/components/schemas/AdminUserListResponse'
           description: ''
         '400':
-          description: Invalid `page`
+          description: Invalid `email` or `username` or `page`
       summary: Get All Users
       tags:
       - Admin Users
   /api/admin/users/{id}:
     delete:
-      description: Permanently delete/ban a user from the platform
+      description: Permanently delete a user from the platform
       parameters:
       - in: path
         name: id
@@ -505,7 +565,7 @@ paths:
           description: ''
         '404':
           description: '`id` not found'
-      summary: Ban User
+      summary: Delete User
       tags:
       - Admin Users
   /api/admin/users/{id}/role:
@@ -554,6 +614,11 @@ paths:
         required: false
         schema:
           type: string
+      - in: query
+        name: path
+        required: false
+        schema:
+          type: string
       responses:
         '200':
           content:
@@ -562,7 +627,7 @@ paths:
                 $ref: '#/components/schemas/VisitorListResponse'
           description: ''
         '400':
-          description: Invalid `ip` or `page`
+          description: Invalid `path` or `ip` or `page`
       summary: Get Visitor Logs
       tags:
       - Admin Dashboard

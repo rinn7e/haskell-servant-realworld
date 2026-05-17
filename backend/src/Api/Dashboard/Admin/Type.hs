@@ -13,8 +13,8 @@ import Servant
   )
 
 import Api.TagCombinator (Tag)
-import Entity.Dashboard.Api (DashboardStatsResponse)
-import Entity.Log.Api (LogListResponse)
+import Entity.Dashboard.Api (DashboardStatsResponse, VisitorStatResponse)
+import Entity.Log.Api (LogListResponse, LogLevel)
 import Entity.Visitor.Api (VisitorListResponse)
 
 data AdminDashboardRoute mode = AdminDashboardRoute
@@ -26,6 +26,15 @@ data AdminDashboardRoute mode = AdminDashboardRoute
           :> Description "Get dashboard card and visitor metrics"
           :> Tag "Admin Dashboard"
           :> Get '[JSON] DashboardStatsResponse
+  , getVisitorStats
+      :: mode
+        :- "dashboard"
+          :> "visitor-stats"
+          :> Summary "Get Visitor Stats"
+          :> Description "Get time-series visitor counts filtered by range (24h, week, month, year)"
+          :> Tag "Admin Dashboard"
+          :> QueryParam "filter" Text
+          :> Get '[JSON] [VisitorStatResponse]
   , getLogs
       :: mode
         :- "logs"
@@ -33,7 +42,7 @@ data AdminDashboardRoute mode = AdminDashboardRoute
           :> Description "Get paginated system audit and moderator logs"
           :> Tag "Admin Dashboard"
           :> QueryParam "page" Int
-          :> QueryParam "level" Text
+          :> QueryParam "level" LogLevel
           :> QueryParam "source" Text
           :> Get '[JSON] LogListResponse
   , getVisitors
@@ -44,6 +53,7 @@ data AdminDashboardRoute mode = AdminDashboardRoute
           :> Tag "Admin Dashboard"
           :> QueryParam "page" Int
           :> QueryParam "ip" Text
+          :> QueryParam "path" Text
           :> Get '[JSON] VisitorListResponse
   }
   deriving stock (Generic)

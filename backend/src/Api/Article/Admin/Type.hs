@@ -16,7 +16,7 @@ import Servant
 import Servant qualified as S
 
 import Api.TagCombinator (Tag)
-import Entity.Article.Api (ArticleListResponse)
+import Entity.Article.Api (AdminArticleListResponse (..))
 
 data AdminArticleRoute mode = AdminArticleRoute
   { getArticles
@@ -28,7 +28,8 @@ data AdminArticleRoute mode = AdminArticleRoute
           :> QueryParam "page" Int
           :> QueryParam "tag" Text
           :> QueryParam "author" Text
-          :> Get '[JSON] ArticleListResponse
+          :> QueryParam "search" Text
+          :> Get '[JSON] AdminArticleListResponse
   , deleteArticle
       :: mode
         :- "articles"
